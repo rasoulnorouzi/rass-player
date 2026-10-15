@@ -1,5 +1,7 @@
 package nl.rass.player.player.subtitle.online
 
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import okhttp3.HttpUrl
 import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.OkHttpClient
@@ -22,7 +24,9 @@ class SubDlProvider(
 
     override suspend fun isAvailable(): Boolean = settings.current().let { it.subDlEnabled && it.subDlApiKey.isNotBlank() }
 
-    override suspend fun search(query: SubtitleQuery): List<OnlineSubtitleResult> {
+    override suspend fun search(query: SubtitleQuery): List<OnlineSubtitleResult> = withContext(Dispatchers.IO) { searchIo(query) }
+
+    private suspend fun searchIo(query: SubtitleQuery): List<OnlineSubtitleResult> {
         val cfg = settings.current()
         if (cfg.subDlApiKey.isBlank()) throw OnlineSubtitleException(OnlineSubtitleException.Kind.NO_KEY, "کلید API سایت SubDL وارد نشده است.")
         val url = buildSearchUrl(query, cfg.subDlApiKey)
@@ -94,7 +98,9 @@ class SubDlProvider(
         return out
     }
 
-    override suspend fun download(result: OnlineSubtitleResult): ByteArray {
+    override suspend fun download(result: OnlineSubtitleResult): ByteArray = withContext(Dispatchers.IO) { downloadIo(result) }
+
+    private suspend fun downloadIo(result: OnlineSubtitleResult): ByteArray {
         val path = result.id
         if (!path.startsWith("/") || path.contains("..")) throw OnlineSubtitleException(OnlineSubtitleException.Kind.BAD_RESPONSE, "نشانی زیرنویس نامعتبر است.")
         val url = downloadBase.trimEnd('/') + path

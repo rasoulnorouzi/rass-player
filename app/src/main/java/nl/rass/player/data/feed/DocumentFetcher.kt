@@ -70,7 +70,10 @@ class DocumentFetcher(
     private val client: OkHttpClient =
         client.newBuilder().followRedirects(false).followSslRedirects(false).cache(null).build()
 
-    suspend fun fetch(req: FetchRequest): FetchResult {
+    /** Runs entirely on the IO dispatcher: closing an HTTP/2 response also writes to the socket. */
+    suspend fun fetch(req: FetchRequest): FetchResult = withContext(Dispatchers.IO) { fetchBlocking(req) }
+
+    private suspend fun fetchBlocking(req: FetchRequest): FetchResult {
         if (FeedUrls.isAsset(req.url)) return fetchAsset(req)
         var url = req.url
         repeat(MAX_REDIRECTS + 1) {

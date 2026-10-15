@@ -1,5 +1,7 @@
 package nl.rass.player.player.subtitle.online
 
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.json.JsonObject
@@ -34,7 +36,9 @@ class OpenSubtitlesProvider(
         .header("User-Agent", userAgent)
         .header("Accept", "application/json")
 
-    override suspend fun search(query: SubtitleQuery): List<OnlineSubtitleResult> {
+    override suspend fun search(query: SubtitleQuery): List<OnlineSubtitleResult> = withContext(Dispatchers.IO) { searchIo(query) }
+
+    private suspend fun searchIo(query: SubtitleQuery): List<OnlineSubtitleResult> {
         val cfg = settings.current()
         if (cfg.openSubtitlesApiKey.isBlank()) throw noKey()
         val byId = query.imdbDigits != null || query.tmdbId != null
@@ -96,7 +100,9 @@ class OpenSubtitlesProvider(
         return out
     }
 
-    override suspend fun download(result: OnlineSubtitleResult): ByteArray {
+    override suspend fun download(result: OnlineSubtitleResult): ByteArray = withContext(Dispatchers.IO) { downloadIo(result) }
+
+    private suspend fun downloadIo(result: OnlineSubtitleResult): ByteArray {
         val cfg = settings.current()
         if (cfg.openSubtitlesApiKey.isBlank()) throw noKey()
         var token = ensureToken(cfg, forceLogin = false)

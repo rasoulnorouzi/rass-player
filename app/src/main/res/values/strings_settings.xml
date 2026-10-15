@@ -69,6 +69,7 @@
     <string name="set_source_over_http">اجازهٔ ارسال از طریق http</string>
     <string name="set_source_over_http_hint">ناامن است؛ فقط در صورت نیاز روشن کنید.</string>
     <string name="set_source_add_confirm">افزودن</string>
+    <string name="set_source_use_example">نشانی نمونه</string>
     <string name="set_source_discover">جستجوی فید</string>
     <string name="set_source_discovering">در حال جستجوی فید…</string>
     <string name="set_source_found">فید پیدا شد: «%1$s» با %2$s عنوان</string>

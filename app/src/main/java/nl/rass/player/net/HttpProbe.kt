@@ -1,5 +1,7 @@
 package nl.rass.player.net
 
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.withTimeoutOrNull
@@ -30,7 +32,9 @@ fun interface HttpProbe {
  */
 class OkHttpProbe(private val base: OkHttpClient) : HttpProbe {
 
-    override suspend fun measure(proxy: Proxy, url: String, timeoutMs: Long): Long {
+    override suspend fun measure(proxy: Proxy, url: String, timeoutMs: Long): Long = withContext(Dispatchers.IO) { measureIo(proxy, url, timeoutMs) }
+
+    private suspend fun measureIo(proxy: Proxy, url: String, timeoutMs: Long): Long {
         val pool = ConnectionPool(1, 10, TimeUnit.SECONDS)
         val client = base.newBuilder()
             .proxy(proxy)

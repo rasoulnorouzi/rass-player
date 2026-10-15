@@ -251,6 +251,8 @@ private fun SourceFormDialog(editing: Source?, vm: SourcesViewModel, onDismiss: 
                     } else {
                         PillButton(stringResource(R.string.set_source_add_confirm), { vm.discoverAndAdd(f, onDismiss) }, style = PillStyle.Accent)
                         PillButton(stringResource(R.string.set_source_discover), { vm.discover(f) })
+                        // Fills a public, working demo feed so the add flow can be tried right away.
+                        PillButton(stringResource(R.string.set_source_use_example), { f = f.copy(address = EXAMPLE_FEED_URL); vm.resetForm() })
                     }
                 }
             }
@@ -288,3 +290,7 @@ private fun SourceFormDialog(editing: Source?, vm: SourcesViewModel, onDismiss: 
         }
     }
 }
+
+/** Public demo feed (openly licensed Blender films) published in this repo. */
+private const val EXAMPLE_FEED_URL =
+    "https://raw.githubusercontent.com/rasoulnorouzi/rass-player/main/docs/feed-examples/demo-feed.json"
