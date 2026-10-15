@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="nav_home">خانه</string>
+    <string name="nav_movies">فیلم‌ها</string>
+    <string name="nav_series">سریال‌ها</string>
+    <string name="nav_search">جستجو</string>
+    <string name="nav_my_list">فهرست من</string>
+    <string name="nav_settings">تنظیمات</string>
+    <string name="action_play">پخش</string>
+    <string name="action_more_info">اطلاعات بیشتر</string>
+    <string name="action_retry">تلاش دوباره</string>
+    <string name="empty_title">چیزی پیدا نشد</string>
+    <string name="error_title">خطایی رخ داد</string>
+    <string name="badge_new_episode">قسمت جدید</string>
+</resources>

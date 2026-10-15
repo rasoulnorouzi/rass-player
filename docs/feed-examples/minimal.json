@@ -1,0 +1,131 @@
+{
+  "rass_feed_version": 1,
+  "name": "Example feed",
+  "updated_at": "2026-10-15T12:00:00Z",
+  "featured": ["bbb"],
+  "top10": ["bbb", "sample-series"],
+  "genres": [
+    { "id": "animation", "name_fa": "انیمیشن", "name_en": "Animation" },
+    { "id": "comedy", "name_fa": "کمدی", "name_en": "Comedy" },
+    { "id": "drama", "name_fa": "درام", "name_en": "Drama" }
+  ],
+  "titles": [
+    {
+      "id": "bbb",
+      "type": "movie",
+      "title_fa": "باک بانی بزرگ",
+      "title_en": "Big Buck Bunny",
+      "year": 2008,
+      "rating": 6.5,
+      "genres": ["animation", "comedy"],
+      "description_fa": "خرگوشی بزرگ و آرام از سه جونده‌ی مزاحم انتقام می‌گیرد.",
+      "description_en": "A large, gentle rabbit takes revenge on three rodents who bully him.",
+      "poster": {
+        "url": "https://media.example.com/bbb/poster.jpg",
+        "sizes": [
+          { "width": 185, "url": "https://media.example.com/bbb/poster-185.jpg" },
+          { "width": 342, "url": "https://media.example.com/bbb/poster-342.jpg" }
+        ]
+      },
+      "backdrop": {
+        "url": "https://img.example.com/w1920/bbb-backdrop.jpg",
+        "template": "https://img.example.com/w{width}/bbb-backdrop.jpg",
+        "widths": [780, 1280, 1920]
+      },
+      "added_at": "2026-10-01",
+      "runtime_min": 10,
+      "cast": [{ "name": "Sacha Goedegebure", "role": "Director" }],
+      "trailer": { "url": "https://media.example.com/bbb/trailer.mp4", "type": "mp4" },
+      "license": {
+        "name": "CC BY 3.0",
+        "url": "https://creativecommons.org/licenses/by/3.0/",
+        "attribution": "(c) copyright 2008, Blender Foundation / www.bigbuckbunny.org"
+      },
+      "ids": { "tmdb": 10378, "imdb": "tt1254207" },
+      "streams": [
+        { "url": "https://media.example.com/bbb/master.m3u8", "type": "hls", "quality": "auto", "priority": 0 },
+        { "url": "https://media.example.com/bbb/bbb-1080.mp4", "type": "mp4", "quality": "1080p", "priority": 0, "video_codec": "h264" },
+        { "url": "https://media.example.com/bbb/bbb-720.mp4", "type": "mp4", "quality": "720p", "priority": 0, "video_codec": "h264" },
+        { "url": "https://backup.example.net/bbb/bbb-720.mp4", "type": "mp4", "quality": "720p", "priority": 1, "label": "Backup" }
+      ],
+      "subtitles": [
+        { "lang": "fa", "label": "فارسی", "url": "subs/bbb.fa.srt", "format": "srt", "encoding": "windows-1256" },
+        { "lang": "en", "label": "English", "url": "subs/bbb.en.vtt", "format": "vtt" }
+      ],
+      "markers": { "credits_start": 568 }
+    },
+    {
+      "id": "sample-series",
+      "type": "series",
+      "title_fa": "سریال نمونه",
+      "title_en": "Sample Series",
+      "year": 2024,
+      "genres": ["drama"],
+      "description_fa": "یک سریال نمونه برای آزمایش فصل‌ها و قسمت‌ها.",
+      "poster": "images/sample-series-poster.jpg",
+      "backdrop": "images/sample-series-backdrop.jpg",
+      "added_at": "2026-10-10T08:00:00Z",
+      "runtime_min": 25,
+      "license": { "name": "CC0 1.0", "url": "https://creativecommons.org/publicdomain/zero/1.0/" },
+      "seasons": [
+        {
+          "number": 1,
+          "episodes": [
+            {
+              "id": "s1e1", "number": 1, "title_fa": "آغاز", "title_en": "The Beginning",
+              "still": "images/s1e1.jpg", "runtime_min": 24, "air_date": "2024-01-05",
+              "streams": [{ "url": "media/s1e1/master.m3u8", "type": "hls", "quality": "auto" }],
+              "subtitles": [
+                { "lang": "fa", "url": "media/s1e1/fa.srt", "format": "srt" },
+                { "lang": "en", "url": "media/s1e1/en.srt", "format": "srt" }
+              ],
+              "markers": { "intro_start": 30, "intro_end": 85, "credits_start": 1380 }
+            },
+            {
+              "id": "s1e2", "number": 2, "title_fa": "راه", "title_en": "The Road",
+              "still": "images/s1e2.jpg", "runtime_min": 25, "air_date": "2024-01-12",
+              "streams": [{ "url": "media/s1e2/master.m3u8", "type": "hls", "quality": "auto" }],
+              "subtitles": [
+                { "lang": "fa", "url": "media/s1e2/fa.srt", "format": "srt" },
+                { "lang": "en", "url": "media/s1e2/en.srt", "format": "srt" }
+              ],
+              "markers": { "recap_start": 0, "recap_end": 40, "intro_start": 40, "intro_end": 95, "credits_start": 1420 }
+            }
+          ]
+        },
+        {
+          "number": 2,
+          "name": "فصل دوم",
+          "episodes": [
+            {
+              "id": "s2e1", "number": 1, "title_fa": "بازگشت", "title_en": "The Return",
+              "still": "images/s2e1.jpg", "runtime_min": 26, "air_date": "2025-02-02",
+              "added_at": "2026-10-10T08:00:00Z",
+              "streams": [
+                { "url": "media/s2e1/1080.mp4", "type": "mp4", "quality": "1080p" },
+                { "url": "media/s2e1/720.mp4", "type": "mp4", "quality": "720p" }
+              ],
+              "subtitles": [
+                { "lang": "fa", "url": "media/s2e1/fa.vtt", "format": "vtt" },
+                { "lang": "en", "url": "media/s2e1/en.vtt", "format": "vtt" }
+              ]
+            },
+            {
+              "id": "s2e2", "number": 2, "title_fa": "پایان", "title_en": "The End",
+              "still": "images/s2e2.jpg", "runtime_min": 27, "air_date": "2025-02-09",
+              "added_at": "2026-10-10T08:00:00Z",
+              "streams": [
+                { "url": "media/s2e2/1080.mp4", "type": "mp4", "quality": "1080p" },
+                { "url": "media/s2e2/720.mp4", "type": "mp4", "quality": "720p" }
+              ],
+              "subtitles": [
+                { "lang": "fa", "url": "media/s2e2/fa.vtt", "format": "vtt" },
+                { "lang": "en", "url": "media/s2e2/en.vtt", "format": "vtt" }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

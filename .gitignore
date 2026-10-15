@@ -1,0 +1,30 @@
+*.iml
+.gradle/
+.kotlin/
+/local.properties
+/build/
+/app/build/
+/captures/
+.externalNativeBuild/
+.cxx/
+.idea/
+*.apk
+*.aab
+*.keystore
+*.jks
+keystore.properties
+.DS_Store
+dist/
+.venv/
+
+# Xray engine AAR (65 MB): fetched by scripts/fetch-xray-aar.sh, pinned by SHA-256 in docs/third-party.md
+/app/libs/libv2ray.aar
+
+# Local-only: Claude, planning and memory files (never published)
+CLAUDE.md
+MEMORY.md
+.claude/
+docs/plan.md
+docs/requirements.md
+docs/future-platforms.md
+docs/design-system.md

@@ -1,0 +1,30 @@
+{
+  "log": {"loglevel": "none", "access": "none", "dnsLog": false},
+  "inbounds": [
+    {"tag": "t-0", "protocol": "http", "listen": "127.0.0.1", "port": 30000, "settings": {"allowTransparent": false}},
+    {"tag": "t-1", "protocol": "http", "listen": "127.0.0.1", "port": 30001, "settings": {"allowTransparent": false}}
+  ],
+  "outbounds": [
+    {
+      "tag": "px-0", "protocol": "vless",
+      "settings": {"vnext": [{"address": "a.example.invalid", "port": 443,
+        "users": [{"id": "11111111-2222-3333-4444-555555555555", "encryption": "none"}]}]},
+      "streamSettings": {"network": "ws", "security": "tls", "sockopt": {"dialerProxy": "hp-0-0"}}
+    },
+    {
+      "tag": "px-1", "protocol": "trojan",
+      "settings": {"servers": [{"address": "b.example.invalid", "port": 443, "password": "pw"}]}
+    },
+    {
+      "tag": "hp-0-0", "protocol": "freedom",
+      "settings": {"fragment": {"packets": "tlshello", "length": "100-200", "interval": "1-1"}}
+    }
+  ],
+  "routing": {
+    "domainStrategy": "AsIs",
+    "rules": [
+      {"type": "field", "inboundTag": ["t-0"], "outboundTag": "px-0"},
+      {"type": "field", "inboundTag": ["t-1"], "outboundTag": "px-1"}
+    ]
+  }
+}

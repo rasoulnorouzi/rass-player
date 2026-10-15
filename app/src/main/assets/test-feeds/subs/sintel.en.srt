@@ -1,0 +1,167 @@
+1
+00:00:05,000 --> 00:00:08,500
+Test subtitle number 1 - 00:05
+
+2
+00:00:20,000 --> 00:00:23,500
+Test subtitle number 2 - 00:20
+
+3
+00:00:35,000 --> 00:00:38,500
+Test subtitle number 3 - 00:35
+
+4
+00:00:50,000 --> 00:00:53,500
+Test subtitle number 4 - 00:50
+
+5
+00:01:05,000 --> 00:01:08,500
+Test subtitle number 5 - 01:05
+Second line: a longer line to check wrapping and line spacing
+
+6
+00:01:20,000 --> 00:01:23,500
+Test subtitle number 6 - 01:20
+
+7
+00:01:35,000 --> 00:01:38,500
+Test subtitle number 7 - 01:35
+
+8
+00:01:50,000 --> 00:01:53,500
+Test subtitle number 8 - 01:50
+
+9
+00:02:05,000 --> 00:02:08,500
+Test subtitle number 9 - 02:05
+
+10
+00:02:20,000 --> 00:02:23,500
+Test subtitle number 10 - 02:20
+Second line: a longer line to check wrapping and line spacing
+
+11
+00:02:35,000 --> 00:02:38,500
+Test subtitle number 11 - 02:35
+
+12
+00:02:50,000 --> 00:02:53,500
+Test subtitle number 12 - 02:50
+
+13
+00:03:05,000 --> 00:03:08,500
+Test subtitle number 13 - 03:05
+
+14
+00:03:20,000 --> 00:03:23,500
+Test subtitle number 14 - 03:20
+
+15
+00:03:35,000 --> 00:03:38,500
+Test subtitle number 15 - 03:35
+Second line: a longer line to check wrapping and line spacing
+
+16
+00:03:50,000 --> 00:03:53,500
+Test subtitle number 16 - 03:50
+
+17
+00:04:05,000 --> 00:04:08,500
+Test subtitle number 17 - 04:05
+
+18
+00:04:20,000 --> 00:04:23,500
+Test subtitle number 18 - 04:20
+
+19
+00:04:35,000 --> 00:04:38,500
+Test subtitle number 19 - 04:35
+
+20
+00:04:50,000 --> 00:04:53,500
+Test subtitle number 20 - 04:50
+Second line: a longer line to check wrapping and line spacing
+
+21
+00:05:05,000 --> 00:05:08,500
+Test subtitle number 21 - 05:05
+
+22
+00:05:20,000 --> 00:05:23,500
+Test subtitle number 22 - 05:20
+
+23
+00:05:35,000 --> 00:05:38,500
+Test subtitle number 23 - 05:35
+
+24
+00:05:50,000 --> 00:05:53,500
+Test subtitle number 24 - 05:50
+
+25
+00:06:05,000 --> 00:06:08,500
+Test subtitle number 25 - 06:05
+Second line: a longer line to check wrapping and line spacing
+
+26
+00:06:20,000 --> 00:06:23,500
+Test subtitle number 26 - 06:20
+
+27
+00:06:35,000 --> 00:06:38,500
+Test subtitle number 27 - 06:35
+
+28
+00:06:50,000 --> 00:06:53,500
+Test subtitle number 28 - 06:50
+
+29
+00:07:05,000 --> 00:07:08,500
+Test subtitle number 29 - 07:05
+
+30
+00:07:20,000 --> 00:07:23,500
+Test subtitle number 30 - 07:20
+Second line: a longer line to check wrapping and line spacing
+
+31
+00:07:35,000 --> 00:07:38,500
+Test subtitle number 31 - 07:35
+
+32
+00:07:50,000 --> 00:07:53,500
+Test subtitle number 32 - 07:50
+
+33
+00:08:05,000 --> 00:08:08,500
+Test subtitle number 33 - 08:05
+
+34
+00:08:20,000 --> 00:08:23,500
+Test subtitle number 34 - 08:20
+
+35
+00:08:35,000 --> 00:08:38,500
+Test subtitle number 35 - 08:35
+Second line: a longer line to check wrapping and line spacing
+
+36
+00:08:50,000 --> 00:08:53,500
+Test subtitle number 36 - 08:50
+
+37
+00:09:05,000 --> 00:09:08,500
+Test subtitle number 37 - 09:05
+
+38
+00:09:20,000 --> 00:09:23,500
+Test subtitle number 38 - 09:20
+
+39
+00:09:35,000 --> 00:09:38,500
+Test subtitle number 39 - 09:35
+
+40
+00:09:50,000 --> 00:09:53,500
+Test subtitle number 40 - 09:50
+Second line: a longer line to check wrapping and line spacing

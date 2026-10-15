@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="rass_bg">#05070A</color>
+    <style name="Theme.RassPlayer" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/rass_bg</item>
+        <item name="android:statusBarColor">@color/rass_bg</item>
+        <item name="android:navigationBarColor">@color/rass_bg</item>
+    </style>
+</resources>

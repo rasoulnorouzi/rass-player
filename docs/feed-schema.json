@@ -1,0 +1,493 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:rass-player:schema:feed:1",
+  "title": "Rass_player feed format v1",
+  "description": "Validates a Rass_player main feed or a part document (kind = \"part\"). See docs/feed-spec.md. The update manifest (update.json) is validated by #/$defs/update_manifest. Uniqueness of ids by key, unknown genre/featured references and marker end > start are not expressible here and are checked by the client (spec section 10).",
+  "if": {
+    "type": "object",
+    "required": ["kind"],
+    "properties": { "kind": { "const": "part" } }
+  },
+  "then": { "$ref": "#/$defs/part" },
+  "else": { "$ref": "#/$defs/feed" },
+
+  "$defs": {
+    "url": {
+      "description": "http(s) absolute URL, or a relative reference resolved against the containing document's URL. No whitespace.",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 4096,
+      "pattern": "^(?:[hH][tT][tT][pP][sS]?://[^\\s/?#]+[^\\s]*|(?![A-Za-z][A-Za-z0-9+.\\-]*:)[^\\s]+)$"
+    },
+    "subtitle_url": {
+      "description": "Subtitle URL: a normal url, or the preset-only client scheme asset:///<path> (a file bundled in the app's assets; used only by the preset test feeds, spec section 8).",
+      "anyOf": [
+        { "$ref": "#/$defs/url" },
+        { "type": "string", "maxLength": 4096, "pattern": "^asset:///[^\\s/][^\\s]*$" }
+      ]
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:\\-]{0,127}$"
+    },
+    "date": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$"
+    },
+    "date_time": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])T([01][0-9]|2[0-3]):[0-5][0-9](:[0-5][0-9](\\.[0-9]+)?)?(Z|z|[+\\-]([01][0-9]|2[0-3]):[0-5][0-9])$"
+    },
+    "date_or_date_time": {
+      "anyOf": [ { "$ref": "#/$defs/date" }, { "$ref": "#/$defs/date_time" } ]
+    },
+    "short_text": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 300,
+      "pattern": "\\S"
+    },
+    "long_text": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 5000,
+      "pattern": "\\S"
+    },
+    "lang": {
+      "type": "string",
+      "pattern": "^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$"
+    },
+    "media_type": {
+      "enum": ["hls", "mp4", "dash"]
+    },
+    "width": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 8192
+    },
+    "sha256_hex": {
+      "type": "string",
+      "pattern": "^[0-9A-Fa-f]{64}$"
+    },
+
+    "image": {
+      "oneOf": [
+        { "$ref": "#/$defs/url" },
+        { "$ref": "#/$defs/image_object" }
+      ]
+    },
+    "image_object": {
+      "type": "object",
+      "required": ["url"],
+      "properties": {
+        "url": { "$ref": "#/$defs/url" },
+        "sizes": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["width", "url"],
+            "properties": {
+              "width": { "$ref": "#/$defs/width" },
+              "url": { "$ref": "#/$defs/url" }
+            },
+            "patternProperties": { "^x_": true },
+            "additionalProperties": false
+          }
+        },
+        "template": {
+          "allOf": [
+            { "$ref": "#/$defs/url" },
+            { "pattern": "\\{width\\}" }
+          ]
+        },
+        "widths": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/width" }
+        }
+      },
+      "dependentRequired": { "template": ["widths"] },
+      "patternProperties": { "^x_": true },
+      "additionalProperties": false
+    },
+
+    "genre": {
+      "type": "object",
+      "required": ["id"],
+      "anyOf": [ { "required": ["name_fa"] }, { "required": ["name_en"] } ],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "name_fa": { "$ref": "#/$defs/short_text" },
+        "name_en": { "$ref": "#/$defs/short_text" }
+      },
+      "patternProperties": { "^x_": true },
+      "additionalProperties": false
+    },
+
+    "person": {
+      "type": "object",
+      "required": ["name"],
+      "properties": {
+        "name": { "$ref": "#/$defs/short_text" },
+        "role": { "$ref": "#/$defs/short_text" },
+        "photo": { "$ref": "#/$defs/image" }
+      },
+      "patternProperties": { "^x_": true },
+      "additionalProperties": false
+    },
+
+    "trailer": {
+      "type": "object",
+      "required": ["url", "type"],
+      "properties": {
+        "url": { "$ref": "#/$defs/url" },
+        "type": { "$ref": "#/$defs/media_type" }
+      },
+      "patternProperties": { "^x_": true },
+      "additionalProperties": false
+    },
+
+    "license": {
+      "type": "object",
+      "required": ["name"],
+      "properties": {
+        "name": { "$ref": "#/$defs/short_text" },
+        "url": { "$ref": "#/$defs/url" },
+        "attribution": { "$ref": "#/$defs/short_text" },
+        "source_url": { "$ref": "#/$defs/url" }
+      },
+      "patternProperties": { "^x_": true },
+      "additionalProperties": false
+    },
+
+    "external_ids": {
+      "type": "object",
+      "properties": {
+        "tmdb": { "type": "integer", "minimum": 1 },
+        "imdb": { "type": "string", "pattern": "^tt[0-9]{7,10}$" }
+      },
+      "patternProperties": { "^x_": true },
+      "additionalProperties": false
+    },
+
+    "stream": {
+      "type": "object",
+      "required": ["url", "type", "quality"],
+      "properties": {
+        "url": { "$ref": "#/$defs/url" },
+        "type": { "$ref": "#/$defs/media_type" },
+        "quality": { "type": "string", "pattern": "^(auto|[1-9][0-9]{2,3}p)$" },
+        "priority": { "type": "integer", "minimum": 0, "maximum": 1000, "default": 0 },
+        "label": { "$ref": "#/$defs/short_text" },
+        "bitrate_kbps": { "type": "integer", "minimum": 1, "maximum": 1000000 },
+        "video_codec": { "enum": ["h264", "hevc", "vp9", "av1"] },
+        "audio": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["lang"],
+            "properties": {
+              "lang": { "$ref": "#/$defs/lang" },
+              "label": { "$ref": "#/$defs/short_text" }
+            },
+            "patternProperties": { "^x_": true },
+            "additionalProperties": false
+          }
+        }
+      },
+      "if": {
+        "required": ["type"],
+        "properties": { "type": { "const": "mp4" } }
+      },
+      "then": {
+        "properties": { "quality": { "not": { "const": "auto" } } }
+      },
+      "patternProperties": { "^x_": true },
+      "additionalProperties": false
+    },
+
+    "subtitle": {
+      "type": "object",
+      "required": ["lang", "url", "format"],
+      "properties": {
+        "lang": { "$ref": "#/$defs/lang" },
+        "url": { "$ref": "#/$defs/subtitle_url" },
+        "format": { "enum": ["srt", "vtt"] },
+        "label": { "$ref": "#/$defs/short_text" },
+        "encoding": { "type": "string", "pattern": "^[A-Za-z0-9._:\\-]{1,40}$" }
+      },
+      "patternProperties": { "^x_": true },
+      "additionalProperties": false
+    },
+
+    "seconds": {
+      "type": "number",
+      "minimum": 0
+    },
+    "markers": {
+      "type": "object",
+      "properties": {
+        "intro_start": { "$ref": "#/$defs/seconds" },
+        "intro_end": { "$ref": "#/$defs/seconds" },
+        "recap_start": { "$ref": "#/$defs/seconds" },
+        "recap_end": { "$ref": "#/$defs/seconds" },
+        "credits_start": { "$ref": "#/$defs/seconds" }
+      },
+      "dependentRequired": {
+        "intro_start": ["intro_end"],
+        "intro_end": ["intro_start"],
+        "recap_start": ["recap_end"],
+        "recap_end": ["recap_start"]
+      },
+      "patternProperties": { "^x_": true },
+      "additionalProperties": false
+    },
+
+    "streams": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 50,
+      "items": { "$ref": "#/$defs/stream" }
+    },
+    "subtitles": {
+      "type": "array",
+      "maxItems": 50,
+      "items": { "$ref": "#/$defs/subtitle" }
+    },
+
+    "episode": {
+      "type": "object",
+      "required": ["id", "number", "streams"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "number": { "type": "integer", "minimum": 0, "maximum": 99999 },
+        "title_fa": { "$ref": "#/$defs/short_text" },
+        "title_en": { "$ref": "#/$defs/short_text" },
+        "description_fa": { "$ref": "#/$defs/long_text" },
+        "description_en": { "$ref": "#/$defs/long_text" },
+        "still": { "$ref": "#/$defs/image" },
+        "runtime_min": { "type": "integer", "minimum": 1, "maximum": 1000 },
+        "air_date": { "$ref": "#/$defs/date" },
+        "added_at": { "$ref": "#/$defs/date_or_date_time" },
+        "streams": { "$ref": "#/$defs/streams" },
+        "subtitles": { "$ref": "#/$defs/subtitles" },
+        "markers": { "$ref": "#/$defs/markers" }
+      },
+      "patternProperties": { "^x_": true },
+      "additionalProperties": false
+    },
+
+    "season": {
+      "type": "object",
+      "required": ["number", "episodes"],
+      "properties": {
+        "number": { "type": "integer", "minimum": 0, "maximum": 9999 },
+        "name": { "$ref": "#/$defs/short_text" },
+        "episodes": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/episode" }
+        }
+      },
+      "patternProperties": { "^x_": true },
+      "additionalProperties": false
+    },
+
+    "title": {
+      "type": "object",
+      "required": ["id", "type"],
+      "anyOf": [ { "required": ["title_fa"] }, { "required": ["title_en"] } ],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "type": { "enum": ["movie", "series"] },
+        "title_fa": { "$ref": "#/$defs/short_text" },
+        "title_en": { "$ref": "#/$defs/short_text" },
+        "original_title": { "$ref": "#/$defs/short_text" },
+        "year": { "type": "integer", "minimum": 1870, "maximum": 2100 },
+        "rating": { "type": "number", "minimum": 0, "maximum": 10 },
+        "genres": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/id" }
+        },
+        "description_fa": { "$ref": "#/$defs/long_text" },
+        "description_en": { "$ref": "#/$defs/long_text" },
+        "poster": { "$ref": "#/$defs/image" },
+        "backdrop": { "$ref": "#/$defs/image" },
+        "logo": { "$ref": "#/$defs/image" },
+        "added_at": { "$ref": "#/$defs/date_or_date_time" },
+        "runtime_min": { "type": "integer", "minimum": 1, "maximum": 1000 },
+        "cast": {
+          "type": "array",
+          "maxItems": 50,
+          "items": { "$ref": "#/$defs/person" }
+        },
+        "trailer": { "$ref": "#/$defs/trailer" },
+        "license": { "$ref": "#/$defs/license" },
+        "ids": { "$ref": "#/$defs/external_ids" },
+        "streams": { "$ref": "#/$defs/streams" },
+        "subtitles": { "$ref": "#/$defs/subtitles" },
+        "markers": { "$ref": "#/$defs/markers" },
+        "seasons": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/season" }
+        }
+      },
+      "allOf": [
+        {
+          "if": { "required": ["type"], "properties": { "type": { "const": "movie" } } },
+          "then": {
+            "required": ["streams"],
+            "not": { "required": ["seasons"] }
+          }
+        },
+        {
+          "if": { "required": ["type"], "properties": { "type": { "const": "series" } } },
+          "then": {
+            "required": ["seasons"],
+            "not": {
+              "anyOf": [
+                { "required": ["streams"] },
+                { "required": ["subtitles"] },
+                { "required": ["markers"] }
+              ]
+            }
+          }
+        }
+      ],
+      "patternProperties": { "^x_": true },
+      "additionalProperties": false
+    },
+
+    "licensed_titles": {
+      "description": "Applied when test = true: every title needs a license.",
+      "properties": {
+        "titles": {
+          "items": { "required": ["license"] }
+        }
+      }
+    },
+    "test_rule": {
+      "if": {
+        "required": ["test"],
+        "properties": { "test": { "const": true } }
+      },
+      "then": { "$ref": "#/$defs/licensed_titles" }
+    },
+
+    "feed": {
+      "type": "object",
+      "required": ["rass_feed_version", "name", "updated_at", "titles"],
+      "properties": {
+        "rass_feed_version": { "const": 1 },
+        "kind": { "const": "feed" },
+        "name": { "$ref": "#/$defs/short_text" },
+        "updated_at": { "$ref": "#/$defs/date_time" },
+        "description": { "$ref": "#/$defs/long_text" },
+        "test": { "type": "boolean", "default": false },
+        "featured": {
+          "type": "array",
+          "maxItems": 20,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/id" }
+        },
+        "top10": {
+          "type": "array",
+          "maxItems": 10,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/id" }
+        },
+        "genres": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/genre" }
+        },
+        "titles": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/title" }
+        },
+        "parts": {
+          "type": "array",
+          "maxItems": 50,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/url" }
+        }
+      },
+      "allOf": [ { "$ref": "#/$defs/test_rule" } ],
+      "patternProperties": { "^x_": true },
+      "additionalProperties": false
+    },
+
+    "part": {
+      "type": "object",
+      "required": ["rass_feed_version", "kind", "titles"],
+      "properties": {
+        "rass_feed_version": { "const": 1 },
+        "kind": { "const": "part" },
+        "updated_at": { "$ref": "#/$defs/date_time" },
+        "test": { "type": "boolean", "default": false },
+        "genres": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/genre" }
+        },
+        "titles": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/title" }
+        }
+      },
+      "allOf": [ { "$ref": "#/$defs/test_rule" } ],
+      "patternProperties": { "^x_": true },
+      "additionalProperties": false
+    },
+
+    "update_manifest": {
+      "title": "Rass_player update.json v1",
+      "type": "object",
+      "required": [
+        "rass_update_version", "package", "version_code", "version_name",
+        "min_sdk", "apks", "signing_cert_sha256", "release_notes_fa"
+      ],
+      "properties": {
+        "rass_update_version": { "const": 1 },
+        "package": { "const": "nl.rass.player" },
+        "version_code": { "type": "integer", "minimum": 1 },
+        "version_name": { "$ref": "#/$defs/short_text" },
+        "min_sdk": { "type": "integer", "minimum": 21, "maximum": 100 },
+        "released_at": { "$ref": "#/$defs/date_time" },
+        "apks": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 5,
+          "items": {
+            "type": "object",
+            "required": ["abi", "url", "sha256"],
+            "properties": {
+              "abi": { "enum": ["universal", "armeabi-v7a", "arm64-v8a", "x86_64", "x86"] },
+              "url": { "$ref": "#/$defs/url" },
+              "sha256": { "$ref": "#/$defs/sha256_hex" },
+              "size_bytes": { "type": "integer", "minimum": 1 }
+            },
+            "patternProperties": { "^x_": true },
+            "additionalProperties": false
+          }
+        },
+        "signing_cert_sha256": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 5,
+          "items": {
+            "type": "string",
+            "pattern": "^(?:[0-9A-Fa-f]{64}|[0-9A-Fa-f]{2}(?::[0-9A-Fa-f]{2}){31})$"
+          }
+        },
+        "release_notes_fa": { "$ref": "#/$defs/long_text" },
+        "release_notes_en": { "$ref": "#/$defs/long_text" },
+        "mandatory": { "type": "boolean", "default": false }
+      },
+      "patternProperties": { "^x_": true },
+      "additionalProperties": false
+    }
+  }
+}

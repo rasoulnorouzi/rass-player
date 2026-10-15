@@ -1,0 +1,43 @@
+{
+  "log": {"loglevel": "none", "access": "none", "dnsLog": false},
+  "dns": {"servers": ["1.1.1.1", "8.8.8.8"], "queryStrategy": "UseIPv4", "tag": "dns-internal"},
+  "inbounds": [
+    {
+      "tag": "socks-in", "protocol": "socks", "listen": "127.0.0.1", "port": 10808,
+      "settings": {"auth": "noauth", "udp": false},
+      "sniffing": {"enabled": true, "destOverride": ["http", "tls"], "routeOnly": true}
+    },
+    {
+      "tag": "http-in", "protocol": "http", "listen": "127.0.0.1", "port": 10809,
+      "settings": {"allowTransparent": false},
+      "sniffing": {"enabled": true, "destOverride": ["http", "tls"], "routeOnly": true}
+    },
+    {
+      "tag": "probe-1", "protocol": "http", "listen": "127.0.0.1", "port": 10810,
+      "settings": {"allowTransparent": false}
+    }
+  ],
+  "outbounds": [
+    {
+      "tag": "px-0", "protocol": "vless",
+      "settings": {"vnext": [{"address": "a.example.invalid", "port": 443,
+        "users": [{"id": "11111111-2222-3333-4444-555555555555", "encryption": "none"}]}]},
+      "streamSettings": {"network": "ws", "security": "tls", "sockopt": {"dialerProxy": "hp-0-0"}}
+    },
+    {
+      "tag": "px-1", "protocol": "trojan",
+      "settings": {"servers": [{"address": "b.example.invalid", "port": 443, "password": "pw"}]}
+    },
+    {
+      "tag": "hp-0-0", "protocol": "freedom",
+      "settings": {"fragment": {"packets": "tlshello", "length": "100-200", "interval": "1-1"}}
+    }
+  ],
+  "routing": {
+    "domainStrategy": "AsIs",
+    "rules": [
+      {"type": "field", "inboundTag": ["socks-in", "http-in", "dns-internal"], "outboundTag": "px-0"},
+      {"type": "field", "inboundTag": ["probe-1"], "outboundTag": "px-1"}
+    ]
+  }
+}

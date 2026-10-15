@@ -1,0 +1,21 @@
+{
+  "rass_update_version": 1,
+  "package": "nl.rass.player",
+  "version_code": 12,
+  "version_name": "0.4.0",
+  "min_sdk": 24,
+  "released_at": "2026-11-01T10:00:00Z",
+  "apks": [
+    {
+      "abi": "universal",
+      "url": "rass-player-0.4.0.apk",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "size_bytes": 31457280
+    }
+  ],
+  "signing_cert_sha256": [
+    "00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00"
+  ],
+  "release_notes_fa": "پخش‌کننده سریع‌تر شد و زیرنویس‌ها بهتر نمایش داده می‌شوند.",
+  "release_notes_en": "Faster player and better subtitle rendering."
+}
