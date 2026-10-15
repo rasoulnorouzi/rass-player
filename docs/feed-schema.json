@@ -149,6 +149,17 @@
       "additionalProperties": false
     },
 
+    "content_rating": {
+      "type": "string",
+      "pattern": "^(G|PG|PG-13|R|NC-17|TV-Y|TV-Y7|TV-G|TV-PG|TV-14|TV-MA|age:[0-9]{1,2})$"
+    },
+
+    "content_warnings": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "enum": ["sexual", "nudity", "gore", "disturbing", "violence", "horror", "drugs", "language"] }
+    },
+
     "license": {
       "type": "object",
       "required": ["name"],
@@ -269,6 +280,8 @@
         "description_en": { "$ref": "#/$defs/long_text" },
         "still": { "$ref": "#/$defs/image" },
         "runtime_min": { "type": "integer", "minimum": 1, "maximum": 1000 },
+        "content_rating": { "$ref": "#/$defs/content_rating" },
+        "content_warnings": { "$ref": "#/$defs/content_warnings" },
         "air_date": { "$ref": "#/$defs/date" },
         "added_at": { "$ref": "#/$defs/date_or_date_time" },
         "streams": { "$ref": "#/$defs/streams" },
@@ -326,6 +339,8 @@
         },
         "trailer": { "$ref": "#/$defs/trailer" },
         "license": { "$ref": "#/$defs/license" },
+        "content_rating": { "$ref": "#/$defs/content_rating" },
+        "content_warnings": { "$ref": "#/$defs/content_warnings" },
         "ids": { "$ref": "#/$defs/external_ids" },
         "streams": { "$ref": "#/$defs/streams" },
         "subtitles": { "$ref": "#/$defs/subtitles" },

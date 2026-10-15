@@ -22,4 +22,5 @@
     <string name="detail_trailer_error">پیش‌نمایش پخش نشد.</string>
     <string name="detail_season_special">ویژه</string>
     <string name="detail_season_n">فصل %1$s</string>
+    <string name="content_filter_hidden">این محتوا با فیلتر محتوا پنهان شده است</string>
 </resources>

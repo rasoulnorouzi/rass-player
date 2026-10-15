@@ -24,6 +24,13 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.runtime.Composable
@@ -118,6 +125,7 @@ fun SearchScreen(onNavigate: (Route) -> Unit, onBack: () -> Unit) {
 @Composable
 private fun QueryField(query: String, onChange: (String) -> Unit, onDone: () -> Unit) {
     var focused by remember { mutableStateOf(false) }
+    val focusManager = LocalFocusManager.current
     val shape = RoundedCornerShape(12.dp)
     BasicTextField(
         value = query,
@@ -132,7 +140,20 @@ private fun QueryField(query: String, onChange: (String) -> Unit, onDone: () -> 
             .clip(shape)
             .background(SurfaceRaised)
             .border(if (focused) 3.dp else 1.dp, if (focused) TextPrimary else TextMuted.copy(alpha = 0.4f), shape)
-            .onFocusChanged { focused = it.isFocused },
+            .onFocusChanged { focused = it.isFocused }
+            // A focused text field eats the D-pad (cursor moves) and traps focus. Editing happens on the
+            // on-screen keyboard, so the arrows always move focus out of the field.
+            .onPreviewKeyEvent { e ->
+                val dir = when (e.key) {
+                    Key.DirectionUp -> FocusDirection.Up
+                    Key.DirectionDown -> FocusDirection.Down
+                    Key.DirectionLeft -> FocusDirection.Left
+                    Key.DirectionRight -> FocusDirection.Right
+                    else -> null
+                } ?: return@onPreviewKeyEvent false
+                if (e.type == KeyEventType.KeyDown) focusManager.moveFocus(dir)
+                true
+            },
         decorationBox = { inner ->
             Box(Modifier.padding(horizontal = 20.dp, vertical = 14.dp), contentAlignment = Alignment.CenterStart) {
                 if (query.isEmpty()) {

@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.serialization.Serializable
+import nl.rass.player.domain.filter.ContentFilterConfig
 import kotlinx.serialization.json.Json
 
 /** Updates are published as GitHub Releases on the user's public repo (R8.2). The user can change it. */
@@ -43,6 +44,8 @@ data class AppSettings(
     val httpCacheMb: Int = 100,
     /** Optional auto-clean cap for all caches together; 0 = off. */
     val totalCacheCapMb: Int = 0,
+    /** R13 content filter. */
+    val contentFilter: ContentFilterConfig = ContentFilterConfig(),
 )
 
 interface SettingsRepository {
@@ -52,19 +55,19 @@ interface SettingsRepository {
     suspend fun replace(settings: AppSettings) { update { settings } }
 }
 
-class DataStoreSettingsRepository(private val store: DataStore<Preferences>) : SettingsRepository {
+class DataStoreSettingsRepository(store: DataStore<Preferences>) : SettingsRepository {
     private val key = stringPreferencesKey("app_settings_v1")
 
-    override val settings: Flow<AppSettings> = store.data.map { decode(it[key]) }.distinctUntilChanged()
+    // Served from memory after the first read (see DataStoreCell: DataStore's flow could miss early writes).
+    private val cell = nl.rass.player.data.DataStoreCell(
+        store,
+        read = { decode(it[key]) },
+        write = { p, v -> p[key] = SettingsJson.encodeToString(AppSettings.serializer(), v) },
+    )
 
-    override suspend fun update(transform: (AppSettings) -> AppSettings): AppSettings {
-        var out = AppSettings()
-        store.edit { p ->
-            out = transform(decode(p[key]))
-            p[key] = SettingsJson.encodeToString(AppSettings.serializer(), out)
-        }
-        return out
-    }
+    override val settings: Flow<AppSettings> = cell.data.distinctUntilChanged()
+
+    override suspend fun update(transform: (AppSettings) -> AppSettings): AppSettings = cell.update(transform)
 
     private fun decode(s: String?): AppSettings =
         s?.let { runCatching { SettingsJson.decodeFromString(AppSettings.serializer(), it) }.getOrNull() } ?: AppSettings()

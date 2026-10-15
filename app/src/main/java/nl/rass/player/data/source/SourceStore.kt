@@ -2,14 +2,12 @@ package nl.rass.player.data.source
 
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
-import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.serialization.json.Json
+import nl.rass.player.data.DataStoreCell
 
 /** Persistence of [SourcesFile]. */
 interface SourceStore {
@@ -18,24 +16,22 @@ interface SourceStore {
 }
 
 /** Preferences DataStore holding one JSON string (decision: Preferences + JSON, see MEMORY.md). */
-class DataStoreSourceStore(private val store: DataStore<Preferences>) : SourceStore {
+class DataStoreSourceStore(store: DataStore<Preferences>) : SourceStore {
     private val json = Json { ignoreUnknownKeys = true; encodeDefaults = true }
     private val key = stringPreferencesKey("sources_v1")
 
     private fun decode(s: String?): SourcesFile =
         s?.let { runCatching { json.decodeFromString(SourcesFile.serializer(), it) }.getOrNull() } ?: SourcesFile()
 
-    override val data: Flow<SourcesFile> = store.data.map { decode(it[key]) }
+    private val cell = DataStoreCell(
+        store,
+        read = { decode(it[key]) },
+        write = { p, v -> p[key] = json.encodeToString(SourcesFile.serializer(), v) },
+    )
 
-    override suspend fun update(transform: (SourcesFile) -> SourcesFile): SourcesFile {
-        var result: SourcesFile? = null
-        store.edit { prefs ->
-            val next = transform(decode(prefs[key]))
-            prefs[key] = json.encodeToString(SourcesFile.serializer(), next)
-            result = next
-        }
-        return result ?: data.first()
-    }
+    override val data: Flow<SourcesFile> = cell.data
+
+    override suspend fun update(transform: (SourcesFile) -> SourcesFile): SourcesFile = cell.update(transform)
 }
 
 class InMemorySourceStore(initial: SourcesFile = SourcesFile()) : SourceStore {

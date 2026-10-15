@@ -80,9 +80,13 @@ import nl.rass.player.ui.theme.Bg
 @Stable
 class ShellController {
     internal var navHasFocus by mutableStateOf(false)
+    /** The user is working in the nav bar (pressed a key there, or Back moved focus to it). False when the
+     *  framework merely gave the bar initial focus at launch, so Home can still focus its billboard. */
+    internal var navUserActive by mutableStateOf(false)
     internal val scrolled = mutableStateMapOf<Route, Boolean>()
+    internal var lastKeyAt = 0L
 
-    val isNavFocused: Boolean get() = navHasFocus
+    val isNavFocused: Boolean get() = navHasFocus && navUserActive
 
     fun reportScrolled(route: Route, scrolled: Boolean) {
         if (this.scrolled[route] != scrolled) this.scrolled[route] = scrolled
@@ -120,6 +124,7 @@ fun AppShell(debugTools: Boolean = false) {
 
     fun focusNav() {
         keyScrolled = false
+        shell.navUserActive = true
         runCatching { navRequester.requestFocus() }
     }
 
@@ -174,7 +179,15 @@ fun AppShell(debugTools: Boolean = false) {
     val navFraction by animateFloatAsState(if (collapsed) 0f else 1f, tween(220), label = "navCollapse")
 
     CompositionLocalProvider(LocalShell provides shell) {
-        Column(Modifier.fillMaxSize().background(Bg)) {
+        Column(
+            Modifier
+                .fillMaxSize()
+                .background(Bg)
+                .onPreviewKeyEvent { e ->
+                    if (e.type == KeyEventType.KeyDown) shell.lastKeyAt = SystemClock.uptimeMillis()
+                    false
+                },
+        ) {
             if (navShown) {
                 Box(
                     Modifier
@@ -182,10 +195,17 @@ fun AppShell(debugTools: Boolean = false) {
                         .collapsible { navFraction }
                         .onFocusChanged {
                             shell.navHasFocus = it.hasFocus
-                            if (it.hasFocus) keyScrolled = false
+                            if (it.hasFocus) {
+                                keyScrolled = false
+                                // Reached by a key press (e.g. Up from the content): the user's choice.
+                                if (SystemClock.uptimeMillis() - shell.lastKeyAt < USER_KEY_WINDOW_MS) shell.navUserActive = true
+                            } else {
+                                shell.navUserActive = false
+                            }
                         }
                         .onPreviewKeyEvent { e ->
                             val n = e.nativeKeyEvent
+                            if (e.type == KeyEventType.KeyDown) shell.navUserActive = true
                             if (debugTools && n.keyCode == AndroidKeyEvent.KEYCODE_MENU && e.type == KeyEventType.KeyDown &&
                                 (n.repeatCount > 0 || n.isLongPress)
                             ) {
@@ -256,6 +276,7 @@ private fun RouteContent(route: Route, navigate: (Route) -> Unit, back: () -> Un
 }
 
 private const val EXIT_WINDOW_MS = 2_000L
+private const val USER_KEY_WINDOW_MS = 1_000L
 
 /** Collapses vertically to `fraction × height`, sliding up; children keep their size (stay focusable). */
 private fun Modifier.collapsible(fraction: () -> Float): Modifier = clipToBounds().layout { m, c ->
@@ -304,7 +325,7 @@ internal fun Route.encode(): String = when (this) {
     is Route.Category -> listOf("category", type.name, genreId.orEmpty()).joinToString(SEP.toString())
     is Route.Detail -> "detail$SEP$catalogKey"
     is Route.Player -> listOf(
-        "player", catalogKey, seasonNumber?.toString().orEmpty(), episodeNumber?.toString().orEmpty(), startFromBeginning.toString(),
+        "player", catalogKey, seasonNumber?.toString().orEmpty(), episodeNumber?.toString().orEmpty(), startFromBeginning.toString(), resume.toString(),
     ).joinToString(SEP.toString())
     is Route.Settings -> "settings$SEP${section.name}"
     is Route.Trailer -> "trailer$SEP$catalogKey"
@@ -321,7 +342,7 @@ internal fun decodeRoute(s: String): Route? {
             "mylist" -> Route.MyList
             "category" -> Route.Category(MediaType.valueOf(p[1]), p[2].ifEmpty { null })
             "detail" -> Route.Detail(p[1])
-            "player" -> Route.Player(p[1], p[2].toIntOrNull(), p[3].toIntOrNull(), p[4].toBoolean())
+            "player" -> Route.Player(p[1], p[2].toIntOrNull(), p[3].toIntOrNull(), p[4].toBoolean(), p.getOrNull(5).toBoolean())
             "settings" -> Route.Settings(SettingsSection.valueOf(p[1]))
             "trailer" -> Route.Trailer(p[1])
             else -> null

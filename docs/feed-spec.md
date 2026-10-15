@@ -216,6 +216,8 @@ At least one of `name_fa` / `name_en` is required. The UI shows `name_fa`, else 
 | `cast` | array of Person, ≤ 50 | no | Shown in feed order (R11.8). |
 | `trailer` | Trailer | no | R11.7. |
 | `license` | License | no; **required when the root has `test: true`** | Shown on the detail page (needed for CC BY attribution). |
+| `content_rating` | string | no | Age rating, §4.5. |
+| `content_warnings` | array of strings | no | Content warnings, §4.5. |
 | `ids` | External ids | no (SHOULD) | Cross-feed matching keys (§12). |
 | `streams` | array of Stream, ≥ 1 | **movie: yes** | §7. |
 | `subtitles` | array of Subtitle | movie: no | §8. |
@@ -260,6 +262,29 @@ The schema rejects them on the wrong type; the client ignores them there.
 
 Both optional. They are **data only**: the client never calls TMDB or IMDb.
 
+### 4.5 Content rating and warnings (R13)
+
+Both fields are optional; feeds without them stay valid. They let the client keep sensitive titles off the Home page
+(or hide them completely, user setting).
+
+- `content_rating`: one of the MPAA ratings `G`, `PG`, `PG-13`, `R`, `NC-17`, a TV rating `TV-Y`, `TV-Y7`, `TV-G`,
+  `TV-PG`, `TV-14`, `TV-MA`, or `age:<n>` (n = 0-99, minimum viewer age). Unknown values are ignored (warning).
+- `content_warnings`: any of `sexual`, `nudity`, `gore`, `disturbing`, `violence`, `horror`, `drugs`, `language`.
+  Unknown values are ignored (warning).
+
+Mapping of a rating to a minimum age (used for the user's "maximum age" setting):
+
+| Rating | Age | Rating | Age |
+|---|---|---|---|
+| `G`, `TV-Y`, `TV-G` | 0 | `TV-14` | 14 |
+| `TV-Y7` | 7 | `R`, `TV-MA` | 17 |
+| `PG`, `TV-PG` | 8 | `NC-17` | 18 |
+| `PG-13` | 13 | `age:<n>` | n |
+
+Titles are also flagged by the client from blocked genres and a keyword list on titles/descriptions; feed authors do
+not need to do that themselves. Merging (§12.2): `content_warnings` of all sources are united and the highest age wins,
+so a safer mirror never un-flags a title.
+
 ## 5. Movie fields
 
 A movie title (`type: "movie"`) MUST have `streams` (≥ 1 valid stream after validation, otherwise the title is
@@ -298,6 +323,7 @@ Feed order of seasons/episodes doesn't matter.
 | `still` | Image | no | 16:9 thumbnail for the episode list and the in-player episodes panel (R5.8). |
 | `runtime_min` | integer 1–1000 | no | |
 | `air_date` | date | no | |
+| `content_rating`, `content_warnings` | as in §4.5 | no | Episode-level values; the client treats them like the title's. |
 | `added_at` | date or date-time | no | When the episode appeared in the feed; drives "new episode" badges (R2.4, R11.3). If missing, the client uses the time it first saw the episode. |
 | `streams` | array of Stream, ≥ 1 | yes | §7. An episode with no valid stream is skipped. |
 | `subtitles` | array of Subtitle | no | §8. |

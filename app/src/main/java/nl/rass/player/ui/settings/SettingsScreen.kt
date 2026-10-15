@@ -105,6 +105,7 @@ fun SettingsScreen(section: SettingsSection, onNavigate: (Route) -> Unit, onBack
                 SettingsSection.Playback -> PlaybackPage(onBack)
                 SettingsSection.Subtitles -> SubtitlesPage(onBack)
                 SettingsSection.OnlineSubtitles -> OnlineSubtitlesPage(onBack)
+                SettingsSection.ContentFilter -> ContentFilterPage(onBack)
                 SettingsSection.PrivateConnection -> PrivateConnectionPage(onBack)
                 SettingsSection.Updates -> UpdatesPage(onBack)
                 SettingsSection.Storage -> StoragePage(onBack)
@@ -128,6 +129,7 @@ private fun SettingsRoot(pin: PinViewModel, onNavigate: (Route) -> Unit, onBack:
         item { SettingRow(stringResource(R.string.set_sec_playback), { go(SettingsSection.Playback) }, subtitle = stringResource(R.string.set_root_playback)) }
         item { SettingRow(stringResource(R.string.set_sec_subtitles), { go(SettingsSection.Subtitles) }, subtitle = stringResource(R.string.set_root_subtitles)) }
         item { SettingRow(stringResource(R.string.set_sec_online), { go(SettingsSection.OnlineSubtitles) }, subtitle = stringResource(R.string.set_root_online)) }
+        item { SettingRow(stringResource(R.string.set_sec_content_filter), { go(SettingsSection.ContentFilter) }, subtitle = stringResource(R.string.set_root_content_filter)) }
         item { SettingRow(stringResource(R.string.set_sec_private), { go(SettingsSection.PrivateConnection) }, subtitle = stringResource(R.string.set_root_private)) }
         item {
             SettingRow(

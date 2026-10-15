@@ -27,6 +27,8 @@ sealed interface Route {
         val seasonNumber: Int? = null,
         val episodeNumber: Int? = null,
         val startFromBeginning: Boolean = false,
+        /** The user already chose "Resume from mm:ss" (Detail button, Continue Watching card): don't ask again. */
+        val resume: Boolean = false,
     ) : Route
 
     data class Settings(val section: SettingsSection = SettingsSection.Root) : Route
@@ -38,5 +40,5 @@ sealed interface Route {
 enum class MediaType { Movie, Series }
 
 enum class SettingsSection {
-    Root, Sources, Playback, Subtitles, OnlineSubtitles, PrivateConnection, Updates, Storage, Backup, About,
+    Root, Sources, Playback, Subtitles, OnlineSubtitles, ContentFilter, PrivateConnection, Updates, Storage, Backup, About,
 }

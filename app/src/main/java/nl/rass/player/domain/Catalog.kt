@@ -55,6 +55,8 @@ data class CatalogEpisode(
     val subtitles: List<SourcedSubtitle>,
     /** Per-source episode ids, rank order. */
     val sources: List<SourceRef>,
+    val contentRating: String? = null,
+    val contentWarnings: List<String> = emptyList(),
 ) {
     val displayTitle: String get() = titleFa ?: titleEn ?: "قسمت $number"
     fun markersFor(sourceId: String): Markers? = streams.firstOrNull { it.sourceId == sourceId }?.markers
@@ -85,6 +87,8 @@ data class CatalogTitle(
     val addedAt: Long? = null,
     /** fa/en/original titles of every member source (primary first), for search. */
     val searchTitles: List<String> = emptyList(),
+    /** R13: flagged by the content filter. Kept off Home unless the user allows it; removed everywhere with "hide everywhere". */
+    val sensitive: Boolean = false,
 ) {
     /** Highest-ranked source with streams; metadata comes from it first (§12.2). */
     val primary: SourceRef get() = sources.firstOrNull { it.hasStreams } ?: sources.first()
@@ -112,10 +116,24 @@ data class Catalog(
     /** Newest first by [CatalogTitle.addedAt]. */
     val recentlyAdded: List<CatalogTitle> = emptyList(),
     val sourceStats: Map<String, SourceStats> = emptyMap(),
+    /** R13: Home shows [CatalogTitle.sensitive] titles (user setting). */
+    val homeShowsSensitive: Boolean = false,
+    /** R13 "hide everywhere": keys of titles and episodes removed by the filter (deep links show a message). */
+    val hiddenKeys: Set<String> = emptySet(),
 ) {
     private val byKey: Map<String, CatalogTitle> by lazy { titles.associateBy { it.key } }
 
     fun title(key: String): CatalogTitle? = byKey[key]
+    fun isHidden(key: String): Boolean = key in hiddenKeys || CatalogKeys.titleKeyOf(key) in hiddenKeys
+
+    /** The catalog as Home's promo rows (hero, Top 10, Recently added, genre rows) see it. */
+    fun forHome(): Catalog = if (homeShowsSensitive || titles.none { it.sensitive }) this
+    else copy(
+        titles = titles.filter { !it.sensitive },
+        featured = featured.filter { !it.sensitive },
+        top10 = top10.filter { !it.sensitive },
+        recentlyAdded = recentlyAdded.filter { !it.sensitive },
+    )
     fun movies(): List<CatalogTitle> = titles.filter { it.type == TitleType.MOVIE }
     fun series(): List<CatalogTitle> = titles.filter { it.type == TitleType.SERIES }
     fun byGenre(genreId: String): List<CatalogTitle> = genreId.lowercase().let { g -> titles.filter { g in it.meta.genreIds } }

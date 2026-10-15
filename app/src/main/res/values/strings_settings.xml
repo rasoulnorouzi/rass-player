@@ -180,6 +180,16 @@
     <string name="set_pc_fail_no_configs">کانفیگی وجود ندارد؛ یک پیوند اشتراک اضافه کنید.</string>
     <string name="set_pc_fail_none_work">هیچ کانفیگی کار نمی‌کند؛ دوباره تلاش می‌شود.</string>
     <string name="set_pc_fail_selected_missing">کانفیگ انتخاب‌شده دیگر وجود ندارد.</string>
+    <string name="set_pc_check">بررسی اتصال</string>
+    <string name="set_pc_check_direct">مقایسه با اتصال مستقیم</string>
+    <string name="set_pc_check_exit">IP خروجی: %1$s (کشور: %2$s)</string>
+    <string name="set_pc_check_via_private">ترافیک برنامه از اتصال خصوصی می‌گذرد.</string>
+    <string name="set_pc_check_via_direct">اتصال خصوصی فعال نیست؛ ترافیک مستقیم است.</string>
+    <string name="set_pc_check_blocked">اتصال خصوصی وصل نیست؛ قطع اضطراری درخواست را متوقف کرد.</string>
+    <string name="set_pc_check_failed">بررسی انجام نشد. اتصال اینترنت را بررسی کنید.</string>
+    <string name="set_pc_check_changed">✓ IP شما تغییر کرده است.</string>
+    <string name="set_pc_check_same">✗ هشدار: IP با اتصال مستقیم یکی است؛ اتصال خصوصی IP را تغییر نداده است.</string>
+    <string name="set_pc_check_direct_failed">اتصال مستقیم برای مقایسه برقرار نشد.</string>
     <string name="set_pc_fail_engine">موتور اتصال راه‌اندازی نشد.</string>
 
     <!-- updates -->
@@ -247,4 +257,29 @@
     <string name="set_about_device">دستگاه</string>
     <string name="set_about_sources">منبع‌های فعال</string>
     <string name="set_about_licenses">مجوزها و کتابخانه‌ها</string>
+    <string name="set_sec_content_filter">فیلتر محتوا</string>
+    <string name="set_root_content_filter">محتوای حساس را از صفحهٔ اصلی دور نگه دارید</string>
+    <string name="cf_enabled">فیلتر محتوا</string>
+    <string name="cf_enabled_hint">عنوان‌های دارای محتوای جنسی، برهنگی یا خشن حساس شمرده می‌شوند</string>
+    <string name="cf_show_home">نمایش محتوای حساس در صفحهٔ اصلی</string>
+    <string name="cf_show_home_hint">خاموش: حساس‌ها فقط در فیلم‌ها، سریال‌ها، جستجو، فهرست من و پخش دیده می‌شوند</string>
+    <string name="cf_hide_all">پنهان کردن کامل محتوای حساس</string>
+    <string name="cf_hide_all_hint">همه‌جا پنهان می‌شود، حتی در جستجو و فهرست من</string>
+    <string name="cf_max_age">بیشترین ردهٔ سنی</string>
+    <string name="cf_age_none">بدون محدودیت</string>
+    <string name="cf_age_value">تا %1$s سال</string>
+    <string name="cf_warnings_title">هشدارهایی که حساس شمرده می‌شوند</string>
+    <string name="cf_w_sexual">محتوای جنسی</string>
+    <string name="cf_w_nudity">برهنگی</string>
+    <string name="cf_w_gore">خشونت خونین</string>
+    <string name="cf_w_disturbing">صحنه‌های آزاردهنده</string>
+    <string name="cf_w_violence">خشونت</string>
+    <string name="cf_w_horror">وحشت</string>
+    <string name="cf_w_drugs">مواد مخدر</string>
+    <string name="cf_w_language">الفاظ رکیک</string>
+    <string name="cf_hide_unrated">حساس شمردن عنوان‌های بدون ردهٔ سنی</string>
+    <string name="cf_keywords_title">واژه‌های دلخواه</string>
+    <string name="cf_keyword_add">افزودن واژه</string>
+    <string name="cf_keyword_remove_hint">برای حذف، روی واژه بزنید</string>
+    <string name="cf_keyword_label">واژه (در عنوان، توضیح یا ژانر)</string>
 </resources>

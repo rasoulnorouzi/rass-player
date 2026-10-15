@@ -94,6 +94,9 @@ object HomeBuilder {
         newEpisodes: Map<String, Int>,
     ): HomeUiState {
         val c = state.catalog
+        // R13: sensitive titles stay off the promo rows (hero, Top 10, Recently added, genre rows); the rows the user
+        // filled themselves (Continue Watching, Recently played, My List, New episodes) use the full catalog.
+        val hc = c.forHome()
         val myKeys = myList.mapTo(HashSet()) { it.catalogKey }
         val failed = state.failedSources.map { it.name }
         if (c.titles.isEmpty()) {
@@ -111,7 +114,7 @@ object HomeBuilder {
             add(row("played", RowKind.RecentlyPlayed, CardStyle.Poster, history.mapNotNull { h ->
                 c.title(h.catalogKey)?.let { posterCard(it, menu = CardMenu.History) }
             }))
-            add(row("added", RowKind.RecentlyAdded, CardStyle.Poster, c.recentlyAdded.map { posterCard(it) }))
+            add(row("added", RowKind.RecentlyAdded, CardStyle.Poster, hc.recentlyAdded.map { posterCard(it) }))
             add(row("new-episodes", RowKind.NewEpisodes, CardStyle.Landscape, myList.mapNotNull { e ->
                 val n = newEpisodes[e.catalogKey] ?: return@mapNotNull null
                 c.title(e.catalogKey)?.let { landscapeCard(it).copy(newEpisodes = n, menu = CardMenu.MyList) }
@@ -119,15 +122,15 @@ object HomeBuilder {
             add(row("my-list", RowKind.MyList, CardStyle.Poster, myList.mapNotNull { e ->
                 c.title(e.catalogKey)?.let { posterCard(it, menu = CardMenu.MyList).copy(newEpisodes = newEpisodes[it.key] ?: 0) }
             }))
-            add(row("top10", RowKind.Top10, CardStyle.Landscape, c.top10.take(10).mapIndexed { i, t ->
+            add(row("top10", RowKind.Top10, CardStyle.Landscape, hc.top10.take(10).mapIndexed { i, t ->
                 landscapeCard(t).copy(rank = i + 1)
             }))
-            addAll(genreRows(c, TitleType.MOVIE))
-            addAll(genreRows(c, TitleType.SERIES))
+            addAll(genreRows(hc, TitleType.MOVIE))
+            addAll(genreRows(hc, TitleType.SERIES))
         }.filter { it.cards.isNotEmpty() }
         return HomeUiState(
             phase = HomePhase.Content,
-            hero = hero(c),
+            hero = hero(hc),
             rows = rows,
             failedSources = failed,
             myListKeys = myKeys,
@@ -162,7 +165,7 @@ object HomeBuilder {
             HomeCard(
                 id = t.key, catalogKey = t.key, type = t.type, title = t.meta.displayTitle,
                 image = ep.still ?: t.meta.backdrop ?: t.meta.poster, backdrop = t.meta.backdrop,
-                onClick = Route.Player(t.key, ep.seasonNumber, ep.number),
+                onClick = Route.Player(t.key, ep.seasonNumber, ep.number, resume = true),
                 progress = p.fraction, episode = ep.seasonNumber to ep.number, episodeKey = ep.key,
                 menu = CardMenu.ContinueWatching,
             )
@@ -170,7 +173,7 @@ object HomeBuilder {
             HomeCard(
                 id = t.key, catalogKey = t.key, type = t.type, title = t.meta.displayTitle,
                 image = t.meta.backdrop ?: t.meta.poster, backdrop = t.meta.backdrop,
-                onClick = Route.Player(t.key), progress = p.fraction, menu = CardMenu.ContinueWatching,
+                onClick = Route.Player(t.key, resume = true), progress = p.fraction, menu = CardMenu.ContinueWatching,
             )
         }
     }

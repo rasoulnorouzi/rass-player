@@ -58,6 +58,8 @@ data class Notice(val id: Int, val text: String)
 data class PlayerUiState(
     val phase: PlayerPhase = PlayerPhase.LOADING,
     val titleText: String = "",
+    /** R13: NOT_FOUND because the content filter hides the title. */
+    val hiddenByFilter: Boolean = false,
     val episodeLabel: String? = null,
     val isSeries: Boolean = false,
     val hasPrev: Boolean = false,

@@ -183,19 +183,31 @@ class SearchIndexTest {
         val buildMs = measureNanoTime { index = SearchIndex(docs) } / 1e6
         val ix = index!!
         val queries = listOf("k", "ka", "kara", "ver s", "ماتر", "می", "sol", "zzzz", "karamit", "kaxa")
-        repeat(30) { queries.forEach { ix.suggest(it) } } // warm-up
+        // Functional checks so the timing loop measures real work, not empty results.
+        assertTrue(ix.suggest("ka").isNotEmpty(), "no suggestions for 'ka'")
+        assertTrue(ix.search("ماتر", limit = 50).isNotEmpty(), "no results for 'ماتر'")
+        // Warm-up (JIT) before measuring.
+        repeat(30) { queries.forEach { ix.suggest(it); ix.search(it, limit = 50) } }
+        // Median of several runs per query: robust to GC pauses and a loaded CI machine.
+        fun medianMs(block: () -> Unit): Double {
+            val runs = DoubleArray(7) { measureNanoTime(block) / 1e6 }
+            runs.sort()
+            return runs[runs.size / 2]
+        }
         var worstSuggest = 0.0
         var worstSearch = 0.0
         for (q in queries) {
-            val s = measureNanoTime { ix.suggest(q) } / 1e6
-            val r = measureNanoTime { ix.search(q, limit = 50) } / 1e6
-            if (s > worstSuggest) worstSuggest = s
-            if (r > worstSearch) worstSearch = r
+            worstSuggest = maxOf(worstSuggest, medianMs { ix.suggest(q) })
+            worstSearch = maxOf(worstSearch, medianMs { ix.search(q, limit = 50) })
         }
         println("PERF build=%.1fms worstSuggest=%.2fms worstSearch=%.2fms".format(buildMs, worstSuggest, worstSearch))
-        assertTrue(worstSuggest < 5.0 || System.getenv("CI") != null, "suggest too slow: $worstSuggest ms")
+        // Budget per keystroke on the JVM (the TV is slower, but suggestions run off the main thread).
+        assertTrue(worstSuggest < PERF_BUDGET_MS, "suggest too slow: $worstSuggest ms (median)")
+        assertTrue(worstSearch < PERF_BUDGET_MS, "search too slow: $worstSearch ms (median)")
         assertTrue(buildMs < 3000, "build too slow: $buildMs ms")
     }
+
+    private companion object { const val PERF_BUDGET_MS = 25.0 }
 }
 
 class RecentSearchesTest {

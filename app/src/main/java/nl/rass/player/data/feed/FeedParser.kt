@@ -6,6 +6,8 @@ import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
+import nl.rass.player.domain.filter.ContentRatings
+import nl.rass.player.domain.filter.ContentWarning
 import nl.rass.player.domain.AudioTrackInfo
 import nl.rass.player.domain.Episode
 import nl.rass.player.domain.ExternalIds
@@ -188,6 +190,8 @@ class FeedParser(private val json: Json = FeedJson) {
                 trailer = o.obj("trailer")?.let { trailer(it) },
                 license = license,
                 ids = o.obj("ids")?.let { ids(it) } ?: ExternalIds(),
+                contentRating = rating(o),
+                contentWarnings = warnings(o),
             )
             val title: Title = when (type) {
                 TitleType.MOVIE -> {
@@ -211,6 +215,25 @@ class FeedParser(private val json: Json = FeedJson) {
                 }
             }
             return ParsedTitle(path, title)
+        }
+
+        private fun rating(o: Obj): String? {
+            val raw = o.raw("content_rating") ?: return null
+            val s = (raw as? JsonPrimitive)?.takeIf { it.isString }?.content
+            val c = ContentRatings.canonical(s)
+            if (c == null) issues.warn(o.path("content_rating"), "unknown content_rating ignored")
+            return c
+        }
+
+        private fun warnings(o: Obj): List<String> {
+            val el = o.raw("content_warnings") ?: return emptyList()
+            if (el !is JsonArray) { issues.warn(o.path("content_warnings"), "not an array"); return emptyList() }
+            val out = LinkedHashSet<String>()
+            el.forEachIndexed { i, e ->
+                val w = ContentWarning.fromWire((e as? JsonPrimitive)?.takeIf { it.isString }?.content)
+                if (w == null) issues.warn(o.path("content_warnings[$i]"), "unknown content warning ignored") else out.add(w.wire)
+            }
+            return out.toList()
         }
 
         private fun idArray(o: Obj, key: String): List<String> {
@@ -302,6 +325,7 @@ class FeedParser(private val json: Json = FeedJson) {
                         still = eo.image("still"), runtimeMin = eo.int("runtime_min", 1..1000),
                         airDate = eo.date("air_date"), addedAt = eo.dateOrDateTime("added_at"),
                         streams = streams, subtitles = subs, markers = eo.obj("markers")?.let { markers(it) },
+                        contentRating = rating(eo), contentWarnings = warnings(eo),
                     )
                 )
             }

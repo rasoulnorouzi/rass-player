@@ -391,7 +391,7 @@ internal fun BufferingSpinner() {
     }
 }
 
-enum class MessageKind { NOT_FOUND, EXHAUSTED, PRIVATE_CONNECTION }
+enum class MessageKind { NOT_FOUND, HIDDEN, EXHAUSTED, PRIVATE_CONNECTION }
 
 @Composable
 internal fun MessagePanel(
@@ -410,6 +410,7 @@ internal fun MessagePanel(
                 stringResource(
                     when (kind) {
                         MessageKind.NOT_FOUND -> R.string.player_not_found
+                        MessageKind.HIDDEN -> R.string.content_filter_hidden
                         MessageKind.EXHAUSTED -> R.string.player_all_failed
                         MessageKind.PRIVATE_CONNECTION -> R.string.player_private_connection
                     },

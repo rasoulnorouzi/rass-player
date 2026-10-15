@@ -1,5 +1,6 @@
 package nl.rass.player.ui.browse
 
+import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -148,7 +149,7 @@ fun TitleActionsSheet(
     SideSheet(visible = target != null, onDismiss = onDismiss, width = 460.dp) {
         val t = shown ?: return@SideSheet
         Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-            Text(t.title, style = MaterialTheme.typography.titleMedium, color = TextPrimary, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            Text(t.title, style = MaterialTheme.typography.titleMedium.copy(textDirection = TextDirection.Content), color = TextPrimary, maxLines = 2, overflow = TextOverflow.Ellipsis)
             PillButton(stringResource(R.string.action_open_details), { onOpenDetails(t.key) }, style = PillStyle.Primary)
             PillButton(
                 stringResource(if (t.inMyList) R.string.action_remove_from_list else R.string.action_add_to_list),

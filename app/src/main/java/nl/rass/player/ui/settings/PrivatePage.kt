@@ -21,7 +21,10 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import nl.rass.player.R
+import nl.rass.player.net.CheckOutcome
 import nl.rass.player.net.ConnectStep
+import nl.rass.player.net.ConnectionChecker
+import nl.rass.player.net.RouteDecision
 import nl.rass.player.net.FailReason
 import nl.rass.player.net.ProxyManager
 import nl.rass.player.net.ProxyState
@@ -32,7 +35,10 @@ import nl.rass.player.ui.format.fa
 import nl.rass.player.ui.format.formatLatencyFa
 
 @HiltViewModel
-class PrivateConnectionViewModel @Inject constructor(private val proxy: ProxyManager) : ViewModel() {
+class PrivateConnectionViewModel @Inject constructor(
+    private val proxy: ProxyManager,
+    private val checker: ConnectionChecker,
+) : ViewModel() {
     val state: StateFlow<ProxyState> = proxy.state
     val data: StateFlow<ProxyStoreData> = proxy.data
     val testing: StateFlow<Boolean> = proxy.testing
@@ -61,6 +67,26 @@ class PrivateConnectionViewModel @Inject constructor(private val proxy: ProxyMan
 
     fun testAll() = run { _ -> proxy.testAll(); "tested" }
 
+    // ---- connection check (exit address); kept in memory only, never logged ----
+    private val _check = MutableStateFlow(CheckUi())
+    val check: StateFlow<CheckUi> = _check.asStateFlow()
+
+    fun runCheck() {
+        if (_check.value.running) return
+        _check.value = CheckUi(running = true)
+        viewModelScope.launch {
+            val proxied = proxy.currentRoute() is RouteDecision.Proxied
+            _check.value = CheckUi(app = checker.viaApp(), viaPrivate = proxied)
+        }
+    }
+
+    fun compareDirect() {
+        val cur = _check.value
+        if (cur.running || cur.app !is CheckOutcome.Ok) return
+        _check.value = cur.copy(running = true)
+        viewModelScope.launch { _check.value = cur.copy(direct = checker.direct(), running = false) }
+    }
+
     /** Result codes ("ok:n:skipped", "no", "tested", "fail") are mapped to Persian text by the page. */
     private fun run(block: suspend (Unit) -> String) {
         if (_busy.value) return
@@ -73,6 +99,13 @@ class PrivateConnectionViewModel @Inject constructor(private val proxy: ProxyMan
     }
 }
 
+data class CheckUi(
+    val running: Boolean = false,
+    val app: CheckOutcome? = null,
+    val viaPrivate: Boolean = false,
+    val direct: CheckOutcome? = null,
+)
+
 @Composable
 fun PrivateConnectionPage(onBack: () -> Unit, vm: PrivateConnectionViewModel = hiltViewModel()) {
     val state by vm.state.collectAsState()
@@ -80,6 +113,7 @@ fun PrivateConnectionPage(onBack: () -> Unit, vm: PrivateConnectionViewModel = h
     val testing by vm.testing.collectAsState()
     val busy by vm.busy.collectAsState()
     val message by vm.message.collectAsState()
+    val check by vm.check.collectAsState()
     val s = data.settings
     var addDialog by remember { mutableStateOf(false) }
     var removing by remember { mutableStateOf<String?>(null) }
@@ -123,6 +157,13 @@ fun PrivateConnectionPage(onBack: () -> Unit, vm: PrivateConnectionViewModel = h
                 PillButton(stringResource(R.string.set_pc_refresh), { vm.refresh() })
             }
         }
+        item {
+            Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+                PillButton(stringResource(R.string.set_pc_check), { vm.runCheck() })
+                if (check.app is CheckOutcome.Ok) PillButton(stringResource(R.string.set_pc_check_direct), { vm.compareDirect() })
+            }
+        }
+        if (check.running || check.app != null) item { CheckStatus(check) }
         if (working || message != null) item {
             StatusText(
                 when {
@@ -192,5 +233,33 @@ private fun AddSubscriptionDialog(onAdd: (String, String) -> Unit, onDismiss: ()
             PillButton(stringResource(R.string.set_save), { if (url.isNotBlank()) onAdd(url.trim(), name.trim()) }, style = PillStyle.Accent)
             PillButton(stringResource(R.string.set_cancel), onDismiss)
         }
+    }
+}
+
+@Composable
+private fun CheckStatus(c: CheckUi) {
+    val app = c.app
+    val lines = buildList {
+        when (app) {
+            is CheckOutcome.Ok -> {
+                add(stringResource(R.string.set_pc_check_exit, app.info.ip, app.info.country ?: "—") to false)
+                add(stringResource(if (c.viaPrivate) R.string.set_pc_check_via_private else R.string.set_pc_check_via_direct) to false)
+            }
+            CheckOutcome.Blocked -> add(stringResource(R.string.set_pc_check_blocked) to true)
+            CheckOutcome.Failed -> add(stringResource(R.string.set_pc_check_failed) to true)
+            null -> Unit
+        }
+        when (val d = c.direct) {
+            is CheckOutcome.Ok -> if (app is CheckOutcome.Ok) {
+                if (d.info.ip != app.info.ip) add(stringResource(R.string.set_pc_check_changed) to false)
+                else add(stringResource(R.string.set_pc_check_same) to true)
+            }
+            CheckOutcome.Blocked, CheckOutcome.Failed -> add(stringResource(R.string.set_pc_check_direct_failed) to true)
+            null -> Unit
+        }
+        if (c.running) add(stringResource(R.string.set_pc_working) to false)
+    }
+    androidx.compose.foundation.layout.Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        lines.forEach { (text, error) -> StatusText(text, error = error) }
     }
 }

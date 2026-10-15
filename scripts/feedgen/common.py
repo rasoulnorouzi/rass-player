@@ -229,10 +229,96 @@ def clean(d):
     return d
 
 
+# ---------------------------------------------------------------------------------------------------------------
+# Content tags (R13). Python port of the app's keyword/genre rules (domain/filter/ContentFilter.kt) plus the manual
+# list content_tags.txt. Nothing is removed from a feed; titles only get content_rating / content_warnings.
+# ---------------------------------------------------------------------------------------------------------------
+TAGS_PATH = Path(__file__).resolve().parent / "content_tags.txt"
+BLOCKED_GENRES = {
+    "erotic", "erotica", "adult", "adults", "adult film", "sexploitation", "exploitation", "porn", "porno",
+    "pornography", "xxx", "softcore", "hardcore",
+    "اروتیک", "بزرگسالان", "بزرگسال", "سکسی", "پورن", "پورنو", "عریان",
+}
+NUDITY_WORDS = {"nude", "nudes", "nudity", "برهنه", "برهنگی", "عریان"}
+DEFAULT_KEYWORDS = [
+    "sex", "sexy", "sexual", "sexually", "sexuality", "sexploitation", "erotic", "erotica", "erotically",
+    "nude", "nudes", "nudity", "porn", "porno", "pornographic", "pornography", "adult film",
+    "adult films", "adult movie", "exploitation film", "exploitation films", "sex hygiene", "striptease", "stripper",
+    "سکسی", "سکس", "جنسی", "برهنه", "برهنگی", "عریان", "اروتیک", "بزرگسالان", "پورن", "پورنو",
+]
+WARNINGS = ("sexual", "nudity", "gore", "disturbing", "violence", "horror", "drugs", "language")
+
+
+def _norm(s: str) -> str:
+    s = s.lower().translate({ord("ي"): "ی", ord("ى"): "ی", ord("ك"): "ک", 0x200C: " ", 0x200D: " ", 0x640: " "})
+    s = "".join(c for c in s if not (0x64B <= ord(c) <= 0x65F or ord(c) == 0x670))
+    return re.sub(r"\s+", " ", s).strip()
+
+
+def _word_re(k: str):
+    parts = [re.escape(p) for p in _norm(k).split(" ")]
+    # letters/digits boundary (underscore counts as a separator), like the Kotlin \p{L}\p{N} lookarounds
+    return re.compile(r"(?<![^\W_])" + r"[^\w]+".join(parts) + r"(?![^\W_])")
+
+
+_KW = [(k, _word_re(k)) for k in DEFAULT_KEYWORDS]
+
+
+def auto_warnings(texts: list[str], genre_names: list[str] = ()) -> list[str]:
+    """Keyword / genre rules -> ['sexual'] or ['nudity', 'sexual'] (empty when nothing matches)."""
+    out: list[str] = []
+    for g in genre_names:
+        if _norm(g) in BLOCKED_GENRES:
+            out.append("sexual")
+    for t in texts:
+        n = _norm(t or "")
+        for k, rx in _KW:
+            if rx.search(n):
+                out.append("nudity" if _norm(k) in NUDITY_WORDS else "sexual")
+    return sorted(set(out), key=WARNINGS.index)
+
+
+def load_manual_tags() -> dict[str, tuple[str | None, list[str]]]:
+    tags: dict[str, tuple[str | None, list[str]]] = {}
+    for line in TAGS_PATH.read_text(encoding="utf-8").splitlines():
+        if not line.strip() or line.lstrip().startswith("#"):
+            continue
+        parts = [p.strip() for p in line.split("|")]
+        parts += [""] * (4 - len(parts))
+        warns = [w for w in re.split(r"[,\s]+", parts[2]) if w]
+        bad = [w for w in warns if w not in WARNINGS]
+        assert not bad, f"unknown warning {bad} in content_tags.txt line: {line}"
+        tags[parts[0]] = (parts[1] or None, warns)
+    return tags
+
+
+def apply_content_tags(feed: dict) -> dict:
+    """Adds content_rating / content_warnings to every title (and episode) of a feed dict, in place."""
+    manual = load_manual_tags()
+    names = {g["id"]: [g.get("name_en", ""), g.get("name_fa", ""), g["id"]] for g in feed.get("genres", [])}
+
+    def tag(obj: dict, key: str | None, genres: list[str]):
+        rating, warns = manual.get(key, (None, [])) if key else (None, [])
+        texts = [obj.get(k) for k in ("title_fa", "title_en", "original_title", "description_fa", "description_en")]
+        auto = auto_warnings([t for t in texts if t], [n for g in genres for n in names.get(g, [g])])
+        all_w = sorted(set(warns) | set(auto), key=WARNINGS.index)
+        if rating:
+            obj["content_rating"] = rating
+        if all_w:
+            obj["content_warnings"] = all_w
+
+    for t in feed["titles"]:
+        tag(t, t["id"], t.get("genres", []))
+        for s in t.get("seasons", []):
+            for e in s.get("episodes", []):
+                tag(e, None, [])
+    return feed
+
+
 def validate_and_write(feed: dict, filename: str) -> Path:
     from jsonschema import Draft202012Validator  # from the project .venv
 
-    feed = clean(feed)
+    feed = clean(apply_content_tags(feed))
     schema = json.loads(SCHEMA_PATH.read_text(encoding="utf-8"))
     errors = sorted(Draft202012Validator(schema).iter_errors(feed), key=lambda e: list(e.path))
     if errors:

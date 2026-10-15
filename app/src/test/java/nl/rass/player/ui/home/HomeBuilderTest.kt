@@ -71,7 +71,7 @@ class HomeBuilderTest {
             s.rows.map { it.kind },
         )
         val cw = s.rows.first().cards.single()
-        assertEquals(Route.Player(seriesKey, 1, 2), cw.onClick)
+        assertEquals(Route.Player(seriesKey, 1, 2, resume = true), cw.onClick)
         assertEquals(1 to 2, cw.episode)
         assertEquals(listOf(1, 2), s.rows.first { it.kind == RowKind.Top10 }.cards.map { it.rank })
         assertEquals(2, s.rows.first { it.kind == RowKind.NewEpisodes }.cards.single().newEpisodes)
@@ -118,7 +118,7 @@ class HomeBuilderTest {
         val routes = listOf(
             Route.Home, Route.Movies, Route.Series, Route.Search, Route.MyList,
             Route.Category(MediaType.Series, "drama"), Route.Category(MediaType.Movie, null),
-            Route.Detail("src:abc:x|y"), Route.Player("tmdb:series:1", 2, 3, true), Route.Player("tmdb:movie:1"),
+            Route.Detail("src:abc:x|y"), Route.Player("tmdb:series:1", 2, 3, true), Route.Player("tmdb:movie:1", resume = true),
             Route.Settings(SettingsSection.Sources), Route.Trailer("imdb:tt1"),
         )
         routes.forEach { assertEquals(it, decodeRoute(it.encode())) }

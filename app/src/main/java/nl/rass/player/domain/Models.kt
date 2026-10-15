@@ -1,5 +1,7 @@
 package nl.rass.player.domain
 
+import nl.rass.player.domain.filter.ContentRatings
+
 /*
  * Immutable models that mirror docs/feed-spec.md v1. These are the *validated* form of one source's feed:
  * every URL is already resolved and allowed (§2.1), every text is trimmed, invalid entries are gone (§10).
@@ -161,6 +163,10 @@ data class TitleMetadata(
     val trailer: Trailer? = null,
     val license: License? = null,
     val ids: ExternalIds = ExternalIds(),
+    /** §4.5, canonical (`PG-13`, `age:16`). */
+    val contentRating: String? = null,
+    /** §4.5 wire values. */
+    val contentWarnings: List<String> = emptyList(),
 ) {
     val displayTitle: String get() = titleFa ?: titleEn ?: originalTitle.orEmpty()
     val description: String? get() = descriptionFa ?: descriptionEn
@@ -184,6 +190,9 @@ data class TitleMetadata(
         trailer = trailer ?: other.trailer,
         license = license ?: other.license,
         ids = ExternalIds(ids.tmdb ?: other.ids.tmdb, ids.imdb ?: other.ids.imdb),
+        // Safety fields: a safer mirror must not un-flag a title (§4.5). Warnings are united, the higher age wins.
+        contentRating = listOfNotNull(contentRating, other.contentRating).maxByOrNull { ContentRatings.ageOf(it) ?: -1 },
+        contentWarnings = (contentWarnings + other.contentWarnings).distinct(),
     )
 }
 
@@ -202,6 +211,8 @@ data class Episode(
     val streams: List<Stream> = emptyList(),
     val subtitles: List<Subtitle> = emptyList(),
     val markers: Markers? = null,
+    val contentRating: String? = null,
+    val contentWarnings: List<String> = emptyList(),
 ) {
     val isPlayable: Boolean get() = streams.isNotEmpty()
 }

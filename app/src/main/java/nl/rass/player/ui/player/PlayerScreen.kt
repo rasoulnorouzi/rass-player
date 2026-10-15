@@ -197,7 +197,7 @@ fun PlayerScreen(route: Route.Player, onNavigate: (Route) -> Unit, onBack: () ->
         NoticeHud(ui.notice, offline = ui.offline)
 
         when {
-            ui.phase == PlayerPhase.NOT_FOUND -> MessagePanel(MessageKind.NOT_FOUND, onRetry = null, onSource = null, onBack = onBack)
+            ui.phase == PlayerPhase.NOT_FOUND -> MessagePanel(if (ui.hiddenByFilter) MessageKind.HIDDEN else MessageKind.NOT_FOUND, onRetry = null, onSource = null, onBack = onBack)
             ui.phase == PlayerPhase.EXHAUSTED -> MessagePanel(MessageKind.EXHAUSTED, onRetry = vm::retry, onSource = { sheet = PlayerSheet.Source }, onBack = onBack, sheetOpen = sheet != PlayerSheet.None)
             ui.phase == PlayerPhase.PRIVATE_CONNECTION -> MessagePanel(MessageKind.PRIVATE_CONNECTION, onRetry = vm::retry, onSource = null, onBack = onBack)
             ui.resumePromptMs != null -> ResumeDialog(ui.resumePromptMs ?: 0L, onChoice = vm::onResumeChoice)

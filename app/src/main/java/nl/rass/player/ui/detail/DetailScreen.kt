@@ -1,5 +1,6 @@
 package nl.rass.player.ui.detail
 
+import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -100,6 +101,7 @@ fun DetailScreen(catalogKey: String, onNavigate: (Route) -> Unit, onBack: () -> 
         val t = s.title
         when {
             t != null -> DetailContent(s, t, vm, onNavigate)
+            s.hiddenByFilter -> EmptyState(message = stringResource(R.string.content_filter_hidden))
             s.notFound -> EmptyState(message = stringResource(R.string.detail_not_found))
             else -> DetailLoading()
         }
@@ -242,7 +244,7 @@ private fun Header(
                 RassImage(logo, 420.dp, 120.dp, Modifier.size(420.dp, 120.dp), placeholderSeed = "", contentScale = ContentScale.Fit)
             } else {
                 Text(
-                    m.displayTitle, style = MaterialTheme.typography.displayMedium, color = TextPrimary,
+                    m.displayTitle, style = MaterialTheme.typography.displayMedium.copy(textDirection = TextDirection.Content), color = TextPrimary,
                     maxLines = 2, overflow = TextOverflow.Ellipsis,
                 )
             }
@@ -253,7 +255,7 @@ private fun Header(
             MetaLine(s, t)
             m.description?.let {
                 Text(
-                    it, style = MaterialTheme.typography.bodyLarge, color = TextPrimary.copy(alpha = 0.9f),
+                    it, style = MaterialTheme.typography.bodyLarge.copy(textDirection = TextDirection.Content), color = TextPrimary.copy(alpha = 0.9f),
                     maxLines = 4, overflow = TextOverflow.Ellipsis,
                 )
             }
@@ -304,7 +306,7 @@ private fun Buttons(s: DetailUiState, t: CatalogTitle, playRequester: FocusReque
             val resume = s.movieResumeMs
             if (resume != null) {
                 add(ButtonSpec("play", stringResource(R.string.detail_resume_at, formatDurationFa(resume)), R.drawable.ic_play, PillStyle.Primary) {
-                    onNavigate(Route.Player(t.key))
+                    onNavigate(Route.Player(t.key, resume = true))
                 })
                 add(ButtonSpec("restart", stringResource(R.string.detail_start_over), null, PillStyle.Secondary) {
                     onNavigate(Route.Player(t.key, startFromBeginning = true))
@@ -323,7 +325,7 @@ private fun Buttons(s: DetailUiState, t: CatalogTitle, playRequester: FocusReque
                     stringResource(R.string.detail_resume_episode, e.seasonNumber.fa(), e.number.fa(), formatDurationFa(resume))
                 } else stringResource(R.string.detail_play_episode, e.seasonNumber.fa(), e.number.fa())
                 add(ButtonSpec("play", label, R.drawable.ic_play, PillStyle.Primary) {
-                    onNavigate(Route.Player(t.key, e.seasonNumber, e.number))
+                    onNavigate(Route.Player(t.key, e.seasonNumber, e.number, resume = resume != null))
                 })
                 if (resume != null) {
                     add(ButtonSpec("restart", stringResource(R.string.detail_start_over), null, PillStyle.Secondary) {

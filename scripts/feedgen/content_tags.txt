@@ -1,0 +1,49 @@
+# Manual content tags for the test feeds (R13). One title per line:  id | content_rating | content_warnings | note
+# Nothing is removed from the feeds: tagged titles are only kept off the Home screen by the app's content filter.
+# Rating and warnings are optional (leave empty). Warnings: sexual nudity gore disturbing violence horror drugs language.
+# Ids not found in a feed are ignored. Python keyword/genre rules in common.py add "sexual"/"nudity" on top of this.
+#
+# --- Blender open movies ---
+blender-big-buck-bunny | G | | slapstick
+blender-elephants-dream | PG | | surreal, mild menace
+blender-sintel | PG | violence | fantasy violence, sad ending
+blender-tears-of-steel | PG-13 | violence | sci-fi action
+blender-cosmos-laundromat | PG | | mild dark themes (depression, suicide wish)
+blender-spring | PG | | fantasy peril
+test-hls-quality-menu | G | |
+test-failover | G | |
+# --- TV series ---
+ia-series-beverly-hillbillies | TV-G | |
+ia-series-robin-hood | TV-PG | violence |
+ia-series-sherlock-holmes-1954 | TV-PG | violence |
+ia-series-lucy-show | TV-G | |
+# --- Internet Archive films: sexual / nudity / exploitation ---
+ia-sex_madness | | sexual | 1930s sex-hygiene exploitation film
+ia-DiaryofaNudist | | nudity,sexual | nudist-colony film
+ia-TheNakedWitch | | nudity,horror | 1960s nudie horror
+ia-DoubleFeatureHell2theGrindhouseExperience | age:18 | nudity,sexual,gore | grindhouse compilation with adult-content advisory
+ia-DoubleFeatureHell6grindhouse2 | age:18 | nudity,sexual,gore | grindhouse compilation with adult-content advisory
+ia-Teaserama | | nudity,sexual | burlesque/striptease revue
+ia-ChildBride | | nudity,disturbing | 1938 exploitation film about child marriage
+ia-slave_in_bondage | | sexual,disturbing | vice/prostitution-ring exploitation
+ia-HouseOnBareMountain | | nudity,sexual | nudie film
+ia-InvasionOfTheBeeGirls | R | sexual,nudity,horror | 1970s sexploitation-style sci-fi horror
+ia-NakedMassacre1976 | R | gore,nudity,disturbing | serial-killer film
+ia-Grave_of_the_Vampire_movie | R | gore,sexual,disturbing | 1970s horror with sexual violence
+ia-BloodyPitOfHorror | | gore,horror,sexual | 1960s Italian horror with torture and semi-nudity
+ia-reefer_madness1938 | | drugs,sexual | anti-drug exploitation film with sexual content
+# --- gore / disturbing ---
+ia-nazi_concentration_camps | | disturbing,gore | documentary footage, graphic
+ia-Night.Of.The.Living.Dead_1080p | | gore,horror | zombie horror
+ia-Haxan_tinted_and_subtitled | | nudity,disturbing,horror | 1922 witchcraft documentary-drama, torture and nudity
+ia-dw_griffith_birth_of_a_nation | | disturbing | racist content
+ia-shame_ | | disturbing | racism and mob violence
+ia-ABucketofBlood | | horror,violence | dark comedy horror
+ia-Saint_Louis_Bank_Robbery | | violence |
+# --- mild, noted ---
+ia-VoyagetothePlanetofPrehistoricWomen | PG | |
+ia-she_gods_of_shark_reef | PG | |
+ia-Sita_Sings_the_Blues | PG | |
+ia-rockstar-2011 | TV-14 | language |
+# --- unreviewed ---
+ia-publicmovies212 | age:18 | | bulk compilation of many films, cannot be reviewed: kept off Home

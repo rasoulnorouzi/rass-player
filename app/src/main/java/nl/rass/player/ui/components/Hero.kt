@@ -1,5 +1,6 @@
 package nl.rass.player.ui.components
 
+import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Arrangement
@@ -74,7 +75,7 @@ fun HeroBillboard(
                     RassImage(i.logoUrl, 480.dp, 140.dp, Modifier.size(480.dp, 140.dp), placeholderSeed = i.title,
                         contentScale = androidx.compose.ui.layout.ContentScale.Fit)
                 } else {
-                    Text(i.title, style = MaterialTheme.typography.displayMedium, color = TextPrimary, maxLines = 2)
+                    Text(i.title, style = MaterialTheme.typography.displayMedium.copy(textDirection = TextDirection.Content), color = TextPrimary, maxLines = 2)
                 }
                 HeroMeta(i)
                 if (i.description != null) {

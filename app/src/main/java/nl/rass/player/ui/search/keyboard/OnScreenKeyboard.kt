@@ -5,6 +5,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -59,7 +60,10 @@ fun OnScreenKeyboard(
 ) {
     val rows = remember(language, micAvailable) { KeyboardLayouts.rows(language, micAvailable) }
     val requesters = remember(rows) { rows.map { r -> r.map { FocusRequester() } } }
-    val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
+    // The screen is RTL (results panel on the left). The English layout is drawn left-to-right like a real
+    // QWERTY keyboard; the Persian layout right-to-left.
+    val screenRtl = LocalLayoutDirection.current == LayoutDirection.Rtl
+    val keysRtl = screenRtl && language != KeyboardLanguage.EN
 
     fun move(r: Int, c: Int, d: Dir): Boolean {
         val n = rows.size
@@ -72,34 +76,38 @@ fun OnScreenKeyboard(
             Dir.Up -> { val nr = (r - 1 + n) % n; requesters[nr][mapCol(nr)].requestFocus() }
             Dir.Down -> { val nr = (r + 1) % n; requesters[nr][mapCol(nr)].requestFocus() }
             else -> {
-                // Logical step: index grows toward the end side (left in RTL, right in LTR).
-                val towardEnd = (d == Dir.Right) != rtl
                 val size = rows[r].size
-                val next = if (towardEnd) c + 1 else c - 1
+                // Physical direction → index step for how this layout is drawn.
+                val next = if ((d == Dir.Left) == keysRtl) c + 1 else c - 1
+                // The results panel is on the start side of the screen (left in RTL).
+                val towardExit = (d == Dir.Left) == screenRtl
+                val exitEdge = if ((screenRtl == keysRtl)) size - 1 else 0
                 when {
                     next in 0 until size -> requesters[r][next].requestFocus()
-                    towardEnd -> return false // leave toward the results
-                    else -> requesters[r][size - 1].requestFocus() // wrap to the exit edge
+                    towardExit -> return false // leave toward the results
+                    else -> requesters[r][exitEdge].requestFocus() // wrap to the exit edge
                 }
             }
         }
         return true
     }
 
-    Column(modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        rows.forEachIndexed { r, row ->
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                row.forEachIndexed { c, key ->
-                    val fr = requesters[r][c]
-                    KeyButton(
-                        key = key,
-                        language = language,
-                        requester = if (r == 0 && c == 0 && firstKeyFocus != null) firstKeyFocus else fr,
-                        extraRequester = if (r == 0 && c == 0 && firstKeyFocus != null) fr else null,
-                        onKey = onKey,
-                        onMove = { d -> move(r, c, d) },
-                        modifier = Modifier.weight(weightOf(key)),
-                    )
+    CompositionLocalProvider(LocalLayoutDirection provides if (keysRtl) LayoutDirection.Rtl else LayoutDirection.Ltr) {
+        Column(modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            rows.forEachIndexed { r, row ->
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    row.forEachIndexed { c, key ->
+                        val fr = requesters[r][c]
+                        KeyButton(
+                            key = key,
+                            language = language,
+                            requester = if (r == 0 && c == 0 && firstKeyFocus != null) firstKeyFocus else fr,
+                            extraRequester = if (r == 0 && c == 0 && firstKeyFocus != null) fr else null,
+                            onKey = onKey,
+                            onMove = { d -> move(r, c, d) },
+                            modifier = Modifier.weight(weightOf(key)),
+                        )
+                    }
                 }
             }
         }

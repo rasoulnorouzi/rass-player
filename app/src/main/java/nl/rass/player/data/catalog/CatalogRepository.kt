@@ -6,7 +6,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.stateIn
@@ -30,6 +32,7 @@ import nl.rass.player.data.source.SourceRepository
 import nl.rass.player.domain.Catalog
 import nl.rass.player.domain.CatalogTitle
 import nl.rass.player.domain.SourceCatalog
+import nl.rass.player.domain.filter.ContentFilterConfig
 import nl.rass.player.search.MatchType
 import nl.rass.player.search.SearchDocument
 import nl.rass.player.search.SearchIndex
@@ -78,6 +81,8 @@ class CatalogRepository(
     private val io: CoroutineDispatcher = Dispatchers.IO,
     private val compute: CoroutineDispatcher = Dispatchers.Default,
     private val now: () -> Long = System::currentTimeMillis,
+    /** R13: changing it rebuilds the catalog and the search index at once. Default = filter off. */
+    private val contentFilter: Flow<ContentFilterConfig> = flowOf(ContentFilterConfig.Off),
     autoStart: Boolean = true,
 ) {
     private data class Snapshot(
@@ -115,8 +120,8 @@ class CatalogRepository(
             sourceRepository.enabledSources.distinctUntilChanged().collect { sync(it) }
         }
         scope.launch {
-            combine(sourceRepository.enabledSources, snapshots) { s, snap -> s to snap }
-                .mapLatest { (sources, snap) -> build(sources, snap) }
+            combine(sourceRepository.enabledSources, snapshots, contentFilter.distinctUntilChanged()) { s, snap, f -> Triple(s, snap, f) }
+                .mapLatest { (sources, snap, f) -> build(sources, snap, f) }
                 .collect { built.value = it }
         }
         scope.launch {
@@ -170,11 +175,13 @@ class CatalogRepository(
         for (s in toLoad) {
             val cached = withContext(io) { loader.loadCached(spec(s)) }
             update(s.id) {
-                it.copy(
+                val withCache = it.copy(
                     catalog = cached.feed?.catalog, report = cached.feed?.report,
                     fetchedAt = cached.fetchedAt, maxAgeSec = cached.maxAgeSec,
-                    lastSuccessAt = cached.fetchedAt, loading = false,
+                    lastSuccessAt = cached.fetchedAt,
                 )
+                // Stays "loading" when a refresh follows right away.
+                withCache.copy(loading = isStale(s, withCache))
             }
             if (isStale(s, snapshots.value[s.id])) refresh(s)
         }
@@ -182,8 +189,10 @@ class CatalogRepository(
 
     private fun refresh(s: Source): Job = synchronized(jobs) {
         jobs[s.id]?.takeIf { it.isActive }?.let { return it }
+        // Mark loading before the job starts, so no state is ever built that looks "done" in between
+        // (Home would flash an empty/partial-error state).
+        update(s.id) { it.copy(loading = true) }
         val job = scope.launch {
-            update(s.id) { it.copy(loading = true) }
             val r = withContext(io) { loader.refresh(spec(s)) }
             update(s.id) { old ->
                 val keep = r.error == null && r.notModified && old.catalog != null
@@ -217,13 +226,13 @@ class CatalogRepository(
 
     private fun spec(s: Source) = SourceSpec(s.id, s.name, s.url, s.auth)
 
-    private suspend fun build(sources: List<Source>, snap: Map<String, Snapshot>): Built = withContext(compute) {
+    private suspend fun build(sources: List<Source>, snap: Map<String, Snapshot>, filter: ContentFilterConfig): Built = withContext(compute) {
         val inputs = sources.mapNotNull { s -> snap[s.id]?.catalog?.let { MergeInput(s.id, s.name, it) } }
         val raw = merger.mergeRaw(inputs)
         val needFirstSeen = raw.titles.filter { it.addedAt == null }.map { it.key }
         val firstSeen = if (needFirstSeen.isEmpty() || firstSeenDao == null) emptyMap()
         else runCatching { withContext(io) { firstSeenDao.recordAndGet(needFirstSeen, now()) } }.getOrDefault(emptyMap())
-        val catalog = merger.finish(raw, firstSeen)
+        val catalog = CatalogContentFilter.apply(merger.finish(raw, firstSeen), filter)
         val statuses = sources.map { s ->
             val sn = snap[s.id]
             SourceStatus(s.id, s.name, sn?.loading ?: true, sn?.error, sn?.report, sn?.lastSuccessAt, sn?.catalog != null)

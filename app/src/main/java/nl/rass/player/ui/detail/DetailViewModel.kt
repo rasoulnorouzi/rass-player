@@ -49,6 +49,8 @@ data class DetailUiState(
     /** Every source that has a stream for this title (badges). */
     val sourceNames: List<String> = emptyList(),
     val trailerPlayable: Boolean = false,
+    /** R13 "hide everywhere": the title exists but the content filter removed it. */
+    val hiddenByFilter: Boolean = false,
 ) {
     val notFound: Boolean get() = !loading && title == null
 }
@@ -110,7 +112,8 @@ class DetailViewModel @AssistedInject constructor(
 
     private fun build(cs: CatalogState, prog: Map<String, WatchProgress>, inList: Boolean, newK: Set<String>): DetailUiState {
         val t = cs.catalog.title(catalogKey)
-            ?: return DetailUiState(loading = cs.sources.isEmpty() || cs.isLoading)
+            ?: return if (cs.catalog.isHidden(catalogKey)) DetailUiState(loading = false, hiddenByFilter = true)
+            else DetailUiState(loading = cs.sources.isEmpty() || cs.isLoading)
         val isMovie = t.type == TitleType.MOVIE
         val movieP = prog[""]
         val watched = if (isMovie) movieP?.completed == true

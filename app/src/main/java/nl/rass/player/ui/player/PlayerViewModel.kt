@@ -201,10 +201,13 @@ class PlayerViewModel @Inject constructor(
             }
 
             val t = withTimeoutOrNull(TITLE_WAIT_MS) {
-                catalogRepository.state.mapNotNull { it.catalog.title(route.catalogKey) }.first()
+                catalogRepository.state.first { it.catalog.title(route.catalogKey) != null || it.catalog.isHidden(route.catalogKey) }
+                    .catalog.title(route.catalogKey)
             }
             if (t == null) {
-                _ui.update { it.copy(phase = PlayerPhase.NOT_FOUND) }
+                // R13 "hide everywhere": say why instead of "not found".
+                val hidden = catalogRepository.state.value.catalog.isHidden(route.catalogKey)
+                _ui.update { it.copy(phase = PlayerPhase.NOT_FOUND, hiddenByFilter = hidden) }
                 return@launch
             }
             title = t
@@ -215,7 +218,7 @@ class PlayerViewModel @Inject constructor(
                 _ui.update { it.copy(phase = PlayerPhase.NOT_FOUND) }
                 return@launch
             }
-            openItem(ep, route.startFromBeginning)
+            openItem(ep, route.startFromBeginning, resumeChosen = route.resume)
         }
     }
 
@@ -300,7 +303,7 @@ class PlayerViewModel @Inject constructor(
 
     // ---- items -------------------------------------------------------------------------------------------
 
-    private suspend fun openItem(ep: CatalogEpisode?, startFromBeginning: Boolean) {
+    private suspend fun openItem(ep: CatalogEpisode?, startFromBeginning: Boolean, resumeChosen: Boolean = false) {
         val t = title ?: return
         episode = ep
         itemKey = ep?.key.orEmpty()
@@ -309,7 +312,11 @@ class PlayerViewModel @Inject constructor(
         firstFrame = false
         library.recordPlay(t.key, t.type, itemKey)
 
-        val decision = ResumeRules.decide(progressRepository.get(t.key, itemKey), settings.resumeBehavior, startFromBeginning)
+        val decision = ResumeRules.decide(
+            progressRepository.get(t.key, itemKey),
+            if (resumeChosen) nl.rass.player.data.settings.ResumeBehavior.ALWAYS_RESUME else settings.resumeBehavior,
+            startFromBeginning,
+        )
         anchorMs = when (decision) {
             ResumeDecision.StartOver -> 0
             is ResumeDecision.Resume -> decision.positionMs

@@ -17,6 +17,7 @@ import nl.rass.player.domain.SourcedSubtitle
 import nl.rass.player.domain.Subtitle
 import nl.rass.player.domain.Title
 import nl.rass.player.domain.TitleType
+import nl.rass.player.domain.filter.ContentRatings
 import nl.rass.player.domain.seasonOrder
 import nl.rass.player.search.PersianTextNormalizer
 
@@ -238,6 +239,8 @@ class CatalogMerger(private val normalizer: PersianTextNormalizer = PersianTextN
                         e.streams.map { SourcedStream(m.sourceId, m.sourceName, m.rank, it, e.markers) }
                     },
                     subtitles = poolSubtitles(ordered.map { it.first to it.second.subtitles }),
+                    contentRating = having.mapNotNull { it.second.contentRating }.maxByOrNull { ContentRatings.ageOf(it) ?: -1 },
+                    contentWarnings = having.flatMap { it.second.contentWarnings }.distinct(),
                     sources = having.sortedBy { it.first.rank }.map { (m, e) ->
                         SourceRef(m.sourceId, m.sourceName, m.rank, e.id, e.isPlayable)
                     },

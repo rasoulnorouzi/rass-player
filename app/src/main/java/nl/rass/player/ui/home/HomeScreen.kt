@@ -137,6 +137,14 @@ private fun HomeContent(s: HomeUiState, vm: HomeViewModel, onNavigate: (Route) -
         val key = focusedRow
         if (key == null || key == HERO_KEY || !focusRow(key)) focusFallback()
     }
+    // The billboard/rows are rebuilt while sources finish loading; if that drops focus, Compose hands it to
+    // the nav bar although the user never went there. Take it back (only while the user hasn't used the bar).
+    LaunchedEffect(shell.navHasFocus, shell.navUserActive) {
+        if (shell.navHasFocus && !shell.navUserActive) {
+            withFrameNanos { }
+            if (shell.navHasFocus && !shell.navUserActive) focusFallback()
+        }
+    }
     // Focus back to the card after its context menu closed (the sheet has slid out by then).
     LaunchedEffect(restoreToken) {
         val key = restoreRow ?: return@LaunchedEffect

@@ -20,6 +20,7 @@ cannot express (unique ids, known genre/featured ids). Shared code: `common.py`.
 | `gen_archive_films.py` | `archive-films.json` | 150 public-domain feature films (Internet Archive) |
 | `gen_archive_series.py` | `archive-series.json` | 4 public-domain TV series, 60 episodes |
 | `gen_hls_test.py` | `hls-test.json` | multi-quality HLS entry + failover entry |
+| `tag_feeds.py` | all feeds above | offline: re-applies content tags (see below), no network |
 
 Run `gen_test_subtitles.py` before `gen_blender.py` (the latter checks the subtitle files exist). Total size is about 230 KB of JSON.
 
@@ -64,3 +65,23 @@ Both are titled `[TEST]` and carry `x_test_note`.
 (preset-only scheme, see `docs/feed-spec.md` section 8). Big Buck Bunny: `bbb.fa.cp1256.srt` (Windows-1256 bytes, no `encoding` hint, Arabic
 yeh/kaf and ASCII digits since cp1256 has no Persian digits), `bbb.en.vtt`, `bbb.en.srt`, `bbb.en.late2s.srt` (every cue 2.0 s late, for the
 sync control), `bbb.ru.srt` (Russian, the app must hide it). Sintel: `sintel.fa.srt` (UTF-8 with BOM), `sintel.en.srt`.
+
+## Content tags (R13)
+
+Nothing is removed from the test feeds. Every generator writes `content_rating` / `content_warnings`
+(feed-spec section 4.5) on titles and episodes via `common.apply_content_tags`, and the app's content filter keeps
+tagged-sensitive titles off the Home screen (or hides them everywhere, a user setting). Two sources of tags:
+
+1. `common.py`: a Python port of the app's keyword / genre rules (word-boundary matching, en + fa), adding `sexual` or
+   `nudity` when a title, description or genre matches.
+2. `content_tags.txt`: the manual list (`id | rating | warnings | note`), from a review of all 150 film titles, their
+   descriptions and subjects (vague ones looked up). After editing it run `.venv/bin/python -I scripts/feedgen/tag_feeds.py`.
+
+Manually tagged films (reasons in one line, no detail): Sex Madness, Reefer Madness (exploitation, sexual content),
+Diary of a Nudist, The Naked Witch, The House on Bare Mountain, Teaserama, both DOUBLE FEATURE HELL compilations (nudity),
+Child Bride and Slaves in Bondage (exploitation, disturbing themes), Invasion of the Bee Girls, Naked Massacre,
+Grave of the Vampire, Bloody Pit of Horror, Haxan (nudity/violence), Nazi Concentration Camps, Night of the Living Dead
+(gore/disturbing), The Birth of a Nation and Shame (racism), A Bucket of Blood, The Saint Louis Bank Robbery (violence),
+Public Domain Movies (`age:18`: a bulk compilation that cannot be reviewed). Blender films carry G/PG ratings, series TV-G/TV-PG.
+Public-domain exploitation titles from other lists (Marihuana, Assassin of Youth, Damaged Lives, Mom and Dad, Glen or Glenda,
+Test Tube Babies, ...) are not in the current feeds; add them to `content_tags.txt` if a future run picks them up.

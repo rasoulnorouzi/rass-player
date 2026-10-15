@@ -43,6 +43,7 @@ import nl.rass.player.data.local.SubtitleOffsetDao
 import nl.rass.player.data.local.WatchProgressDao
 import nl.rass.player.data.local.WatchProgressRepository
 import nl.rass.player.data.settings.DataStoreSettingsRepository
+import kotlinx.coroutines.flow.map
 import nl.rass.player.data.settings.SettingsRepository
 import nl.rass.player.data.source.DataStoreSourceStore
 import nl.rass.player.data.source.FeedDiscovery
@@ -144,7 +145,11 @@ object DataModule {
     @Provides @Singleton
     fun catalogRepository(
         sources: SourceRepository, loader: FeedLoader, firstSeen: FirstSeenDao, @AppScope scope: CoroutineScope,
-    ) = CatalogRepository(sources, loader, firstSeen, scope)
+        settings: SettingsRepository,
+    ) = CatalogRepository(
+        sources, loader, firstSeen, scope,
+        contentFilter = settings.settings.map { it.contentFilter },
+    )
 
     @Provides @Singleton
     fun backupManager(
