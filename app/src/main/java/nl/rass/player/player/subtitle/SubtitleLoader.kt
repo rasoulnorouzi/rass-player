@@ -9,6 +9,8 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
+import nl.rass.player.data.feed.AssetReader
+import nl.rass.player.data.feed.FeedUrls
 import okhttp3.Call
 import okhttp3.Callback
 import okhttp3.OkHttpClient
@@ -26,6 +28,9 @@ class SubtitleLoadException(val reason: Reason, message: String, cause: Throwabl
  *
  * Pass the app's shared [OkHttpClient] so subtitle traffic follows the same proxy settings as the rest
  * of the app (R10.4).
+ *
+ * `asset:///` URLs (preset test feeds, feed-spec §2.1.1/§8) are read from the APK through [assets] with the
+ * same size cap; without an [assets] reader they fail like a 404.
  */
 class SubtitleLoader(
     client: OkHttpClient,
@@ -33,9 +38,23 @@ class SubtitleLoader(
     timeoutMs: Long = DEFAULT_TIMEOUT_MS,
     cacheSize: Int = DEFAULT_CACHE_SIZE,
     private val parseDispatcher: CoroutineDispatcher = Dispatchers.Default,
+    private val assets: AssetReader? = null,
+    private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) {
+    /** Source access header (feed-spec §14), added only on hops to [origin], so redirects elsewhere drop it. */
+    private class AuthTag(val origin: FeedUrls.Origin, val headers: Map<String, String>)
+
     private val client: OkHttpClient = client.newBuilder()
         .callTimeout(timeoutMs, TimeUnit.MILLISECONDS)
+        .addNetworkInterceptor { chain ->
+            val req = chain.request()
+            val tag = req.tag(AuthTag::class.java)
+            if (tag == null || FeedUrls.origin(req.url) != tag.origin) {
+                chain.proceed(req)
+            } else {
+                chain.proceed(req.newBuilder().apply { tag.headers.forEach { (k, v) -> header(k, v) } }.build())
+            }
+        }
         .build()
 
     private val cache = object : LinkedHashMap<String, SubtitleTrack>(cacheSize, 0.75f, true) {
@@ -45,14 +64,20 @@ class SubtitleLoader(
     /**
      * @param formatHint format from the feed, if known; otherwise sniffed from content, URL and Content-Type.
      * @param encodingHint charset from the feed, used when valid (see [SubtitleDecoder]).
+     * @param headers the source's access header for [url] (from MediaAuthHeaders); sent only to [url]'s origin.
      */
-    suspend fun load(url: String, formatHint: SubtitleFormat? = null, encodingHint: String? = null): SubtitleTrack {
+    suspend fun load(
+        url: String,
+        formatHint: SubtitleFormat? = null,
+        encodingHint: String? = null,
+        headers: Map<String, String> = emptyMap(),
+    ): SubtitleTrack {
         val key = "$url|${formatHint ?: ""}|${encodingHint ?: ""}"
         synchronized(cache) { cache[key] }?.let { return it }
 
         // The Content-Type charset is ignored on purpose: servers often label windows-1256 files as UTF-8
         // or ISO-8859-1, and content detection is more reliable.
-        val (bytes, contentType) = download(url)
+        val (bytes, contentType) = if (FeedUrls.isAsset(url)) readAsset(url) else download(url, headers)
         val track = withContext(parseDispatcher) {
             val text = SubtitleDecoder.decode(bytes, encodingHint)
             val format = formatHint ?: SubtitleFormat.detect(url, contentType, text)
@@ -70,8 +95,17 @@ class SubtitleLoader(
         operator fun component2() = contentType
     }
 
-    private suspend fun download(url: String): Download = suspendCancellableCoroutine { cont ->
-        val call = client.newCall(Request.Builder().url(url).get().build())
+    private suspend fun readAsset(url: String): Download = withContext(ioDispatcher) {
+        val path = FeedUrls.assetPath(url)
+        val input = path?.let { p -> runCatching { assets?.open(p) }.getOrNull() }
+            ?: throw SubtitleLoadException(SubtitleLoadException.Reason.HTTP, "Asset not found")
+        Download(input.use { readCappedStream(it) }, null)
+    }
+
+    private suspend fun download(url: String, headers: Map<String, String>): Download = suspendCancellableCoroutine { cont ->
+        val builder = Request.Builder().url(url).get()
+        if (headers.isNotEmpty()) FeedUrls.origin(url)?.let { builder.tag(AuthTag::class.java, AuthTag(it, headers)) }
+        val call = client.newCall(builder.build())
         cont.invokeOnCancellation { call.cancel() }
         call.enqueue(object : Callback {
             override fun onFailure(call: Call, e: IOException) {
@@ -102,19 +136,22 @@ class SubtitleLoader(
         val body = response.body
         val declared = body.contentLength()
         if (declared > maxBytes) throw tooLarge()
+        val bytes = body.byteStream().use { readCappedStream(it, declared) }
+        return Download(bytes, body.contentType()?.toString())
+    }
+
+    private fun readCappedStream(input: java.io.InputStream, declared: Long = -1): ByteArray {
         val out = ByteArrayOutputStream(if (declared in 1..maxBytes) declared.toInt() else 64 * 1024)
-        body.byteStream().use { input ->
-            val buf = ByteArray(16 * 1024)
-            var total = 0L
-            while (true) {
-                val n = input.read(buf)
-                if (n < 0) break
-                total += n
-                if (total > maxBytes) throw tooLarge()
-                out.write(buf, 0, n)
-            }
+        val buf = ByteArray(16 * 1024)
+        var total = 0L
+        while (true) {
+            val n = input.read(buf)
+            if (n < 0) break
+            total += n
+            if (total > maxBytes) throw tooLarge()
+            out.write(buf, 0, n)
         }
-        return Download(out.toByteArray(), body.contentType()?.toString())
+        return out.toByteArray()
     }
 
     private fun tooLarge() =

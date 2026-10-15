@@ -29,7 +29,7 @@ class DiskSubtitleCache(private val dir: File, private val maxBytes: Long = DEFA
         synchronized(lock) {
             val f = file(key)
             if (!f.isFile) return@synchronized null
-            runCatching { f.readBytes().also { f.setLastModified(System.currentTimeMillis()) } }.getOrNull()
+            runCatching { f.readBytes().also { touch(f) } }.getOrNull()
         }
     }
 
@@ -37,7 +37,7 @@ class DiskSubtitleCache(private val dir: File, private val maxBytes: Long = DEFA
         synchronized(lock) {
             if (bytes.size > maxBytes) return@synchronized
             dir.mkdirs()
-            runCatching { file(key).writeBytes(bytes) }
+            runCatching { file(key).also { it.writeBytes(bytes); touch(it) } }
             trim()
         }
     }
@@ -48,6 +48,12 @@ class DiskSubtitleCache(private val dir: File, private val maxBytes: Long = DEFA
 
     suspend fun clear() = withContext(Dispatchers.IO) {
         synchronized(lock) { files().forEach { it.delete() } }
+    }
+
+    /** Marks [f] as most recently used: strictly newer than every other file, even within one millisecond. */
+    private fun touch(f: File) {
+        val newestOther = files().filter { it != f }.maxOfOrNull { it.lastModified() } ?: 0L
+        f.setLastModified(maxOf(System.currentTimeMillis(), newestOther + 1))
     }
 
     private fun trim() {

@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Resume (R4.2) -->
+    <string name="player_resume_from">ادامه از %1$s</string>
+    <string name="player_start_over">از ابتدا</string>
+    <string name="player_resume_title">ادامهٔ تماشا</string>
+
+    <!-- States -->
+    <string name="player_loading">در حال آماده‌سازی…</string>
+    <string name="player_not_found">این عنوان در منابع فعال پیدا نشد.</string>
+    <string name="player_all_failed">هیچ‌کدام از منابع پخش نشد.</string>
+    <string name="player_private_connection">اتصال خصوصی وصل نیست. پخش تا وصل شدن آن ممکن نیست.</string>
+    <string name="player_offline">اتصال اینترنت برقرار نیست؛ با برگشتن اتصال، پخش ادامه پیدا می‌کند.</string>
+    <string name="player_back">بازگشت</string>
+    <string name="player_try_again">تلاش دوباره</string>
+
+    <!-- Notices -->
+    <string name="player_notice_failover">منبع %1$s از %2$s (%3$s)</string>
+    <string name="player_subtitle_failed">بارگیری زیرنویس ناموفق بود.</string>
+    <string name="player_online_none">زیرنویس آنلاینی پیدا نشد.</string>
+    <string name="player_online_found">%1$s زیرنویس آنلاین پیدا شد.</string>
+    <string name="player_sleep_done">تایمر خواب: پخش متوقف شد.</string>
+    <string name="player_sleep_set">تایمر خواب: %1$s</string>
+    <string name="player_defaults_saved">تنظیمات زیرنویس به‌عنوان پیش‌فرض ذخیره شد.</string>
+
+    <!-- Labels -->
+    <string name="player_episode_label">فصل %1$s · قسمت %2$s</string>
+    <string name="player_episode_number">قسمت %1$s</string>
+    <string name="player_skip_intro">رد کردن تیتراژ</string>
+    <string name="player_skip_recap">رد کردن خلاصه</string>
+    <string name="player_next_in">قسمت بعد در %1$s ثانیه</string>
+    <string name="player_next_hint">تأیید: پخش · بازگشت: لغو</string>
+    <string name="player_play_now">پخش</string>
+    <string name="player_cancel">لغو</string>
+    <string name="player_failed_mark">ناموفق</string>
+    <string name="player_watched">دیده‌شده</string>
+
+    <!-- Controls -->
+    <string name="player_play">پخش</string>
+    <string name="player_pause">توقف</string>
+    <string name="player_prev">قسمت قبل</string>
+    <string name="player_next">قسمت بعد</string>
+    <string name="player_episodes">قسمت‌ها</string>
+    <string name="player_subtitles">زیرنویس</string>
+    <string name="player_quality">کیفیت</string>
+    <string name="player_audio">صدا</string>
+    <string name="player_source">منبع</string>
+    <string name="player_speed">سرعت</string>
+    <string name="player_sleep">تایمر خواب</string>
+
+    <!-- Quality -->
+    <string name="player_quality_auto">خودکار</string>
+    <string name="player_quality_variant">%1$s (همین جریان)</string>
+    <string name="player_quality_fixed">%1$s (فایل جدا)</string>
+
+    <!-- Speed / sleep -->
+    <string name="player_speed_normal">عادی</string>
+    <string name="player_sleep_off">خاموش</string>
+    <string name="player_sleep_minutes">%1$s دقیقه</string>
+    <string name="player_sleep_end">پایان همین قسمت/فیلم</string>
+    <string name="player_sleep_remaining">%1$s مانده</string>
+
+    <!-- Subtitle menu (R6.3, R6.5) -->
+    <string name="player_sub_on">زیرنویس روشن</string>
+    <string name="player_sub_off">زیرنویس خاموش</string>
+    <string name="player_sub_lang_fa">فارسی</string>
+    <string name="player_sub_lang_en">انگلیسی</string>
+    <string name="player_sub_tracks">زیرنویس‌ها</string>
+    <string name="player_sub_none">زیرنویسی در منابع نیست.</string>
+    <string name="player_sub_search_online">جستجوی آنلاین زیرنویس</string>
+    <string name="player_sub_searching">در حال جستجو…</string>
+    <string name="player_sub_loading">در حال بارگیری زیرنویس…</string>
+    <string name="player_sub_sync">همگام‌سازی</string>
+    <string name="player_sub_sync_hint">نگه‌داشتن دکمه = گام یک ثانیه‌ای</string>
+    <string name="player_sub_offset">%1$s ثانیه</string>
+    <string name="player_sub_earlier">زودتر</string>
+    <string name="player_sub_later">دیرتر</string>
+    <string name="player_sub_reset">صفر</string>
+    <string name="player_sub_color">رنگ</string>
+    <string name="player_sub_background">پس‌زمینه</string>
+    <string name="player_sub_bg_on">روشن</string>
+    <string name="player_sub_bg_off">خاموش</string>
+    <string name="player_sub_opacity">شفافیت %1$s٪</string>
+    <string name="player_sub_size">اندازه</string>
+    <string name="player_sub_size_value">%1$s٪</string>
+    <string name="player_sub_position">جایگاه</string>
+    <string name="player_sub_up">بالاتر</string>
+    <string name="player_sub_down">پایین‌تر</string>
+    <string name="player_sub_top">بالای صفحه</string>
+    <string name="player_sub_bottom">پایین صفحه</string>
+    <string name="player_sub_save_default">ذخیره به‌عنوان پیش‌فرض</string>
+    <string name="player_color_white">سفید</string>
+    <string name="player_color_yellow">زرد</string>
+    <string name="player_color_cyan">فیروزه‌ای</string>
+    <string name="player_color_green">سبز</string>
+    <string name="player_minus">−</string>
+    <string name="player_plus">+</string>
+</resources>

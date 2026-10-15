@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- App shell -->
+    <string name="shell_press_back_again">برای خروج، دوباره «بازگشت» را بزنید</string>
+
+    <!-- Home rows (R2.4) -->
+    <string name="home_row_continue">ادامهٔ تماشا</string>
+    <string name="home_row_continue_sub">از همان‌جا که ماندید</string>
+    <string name="home_row_recent_played">اخیراً پخش‌شده</string>
+    <string name="home_row_recent_added">تازه‌ها</string>
+    <string name="home_row_recent_added_sub">تازه به منابع اضافه شده</string>
+    <string name="home_row_new_episodes">قسمت‌های جدید</string>
+    <string name="home_row_new_episodes_sub">از سریال‌های فهرست من</string>
+    <string name="home_row_my_list">فهرست من</string>
+    <string name="home_row_top10">۱۰ تای برتر</string>
+    <string name="home_row_genre_movies">فیلم‌های %1$s</string>
+    <string name="home_row_genre_series">سریال‌های %1$s</string>
+    <string name="home_see_all">مشاهدهٔ همه</string>
+
+    <!-- States -->
+    <string name="home_sources_unavailable">%1$s منبع در دسترس نیست</string>
+    <string name="home_sources_unavailable_named">%1$s منبع در دسترس نیست: %2$s</string>
+    <string name="home_empty_title">هنوز محتوایی نیست</string>
+    <string name="home_empty_no_sources">هیچ منبع فعالی ندارید. در تنظیمات ← منابع یک منبع اضافه یا فعال کنید.</string>
+    <string name="home_empty_no_titles">منابع فعال هیچ عنوان قابل پخشی ندارند. منابع را در تنظیمات بررسی کنید.</string>
+    <string name="home_open_sources">تنظیمات منابع</string>
+    <string name="home_error_all">هیچ منبعی در دسترس نیست. اتصال اینترنت یا اتصال خصوصی را بررسی کنید.</string>
+
+    <!-- Shared title labels -->
+    <string name="home_type_movie">فیلم</string>
+    <string name="home_type_series">سریال</string>
+    <string name="home_episode_short">ف%1$s · ق%2$s</string>
+    <string name="home_title_with_episode">%1$s · %2$s</string>
+    <string name="home_badge_new_episodes">%1$s قسمت جدید</string>
+    <string name="home_runtime_hm">%1$s ساعت و %2$s دقیقه</string>
+    <string name="home_runtime_h">%1$s ساعت</string>
+    <string name="home_runtime_m">%1$s دقیقه</string>
+    <string name="home_seasons_count">%1$s فصل</string>
+
+    <!-- Card context menu (Menu key or long-press OK) -->
+    <string name="home_menu_details">جزئیات</string>
+    <string name="home_menu_play">پخش</string>
+    <string name="home_menu_remove_continue">حذف از ادامهٔ تماشا</string>
+    <string name="home_menu_mark_watched">علامت «دیده‌شده»</string>
+    <string name="home_menu_mark_unwatched">علامت «دیده‌نشده»</string>
+    <string name="home_menu_add_my_list">افزودن به فهرست من</string>
+    <string name="home_menu_remove_my_list">حذف از فهرست من</string>
+    <string name="home_menu_remove_history">حذف از اخیراً پخش‌شده</string>
+</resources>

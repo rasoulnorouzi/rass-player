@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="search_hint">جستجوی فیلم و سریال…</string>
+    <string name="search_field_label">عبارت جستجو</string>
+    <string name="search_recent">جستجوهای اخیر</string>
+    <string name="search_recent_clear">پاک کردن</string>
+    <string name="search_suggestions">پیشنهادها</string>
+    <string name="search_filter_all_sources">همه منابع</string>
+    <string name="search_type_all">همه</string>
+    <string name="search_type_movie">فیلم</string>
+    <string name="search_type_series">سریال</string>
+    <string name="search_empty_title">نتیجه‌ای پیدا نشد</string>
+    <string name="search_empty_message">عبارت دیگری را امتحان کنید یا فیلتر منبع را تغییر دهید.</string>
+    <string name="search_idle_message">نام فیلم یا سریال را با کیبورد روی صفحه وارد کنید.</string>
+    <string name="search_loading_catalog">در حال بارگذاری فهرست…</string>
+    <string name="search_results_count">%1$s نتیجه</string>
+    <string name="search_voice">جستجوی صوتی</string>
+    <string name="search_voice_prompt">نام فیلم یا سریال را بگویید</string>
+    <string name="kb_lang_fa">فا</string>
+    <string name="kb_lang_en">EN</string>
+    <string name="kb_space">فاصله</string>
+    <string name="kb_zwnj">نیم‌فاصله</string>
+    <string name="kb_backspace">⌫</string>
+    <string name="kb_clear">پاک</string>
+    <string name="kb_mic">🎤</string>
+</resources>

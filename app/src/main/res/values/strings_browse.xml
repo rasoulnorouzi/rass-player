@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="browse_genre_all">همه</string>
+    <string name="browse_sort_newest">جدیدترین</string>
+    <string name="browse_sort_year">سال</string>
+    <string name="browse_sort_rating">امتیاز</string>
+    <string name="browse_sort_alpha">الفبا</string>
+    <string name="browse_source_all">همه منبع‌ها</string>
+    <string name="browse_source_label">منبع: %1$s</string>
+    <string name="browse_empty_message">در این دسته هنوز عنوانی نیست. فیلتر یا مرتب‌سازی را عوض کنید.</string>
+    <string name="browse_error_message">فهرست بارگذاری نشد. اتصال اینترنت و آدرس منبع را بررسی کنید.</string>
+
+    <string name="action_open_details">جزئیات</string>
+    <string name="action_add_to_list">افزودن به فهرست من</string>
+    <string name="action_remove_from_list">حذف از فهرست من</string>
+    <string name="action_mark_watched">علامت‌گذاری به‌عنوان دیده‌شده</string>
+    <string name="action_mark_unwatched">علامت‌گذاری به‌عنوان ندیده</string>
+    <string name="action_close">بستن</string>
+
+    <string name="mylist_tab_movies">فیلم‌ها</string>
+    <string name="mylist_tab_series">سریال‌ها</string>
+    <string name="mylist_title">فهرست من</string>
+    <string name="mylist_empty_movies_title">هنوز فیلمی در فهرست شما نیست</string>
+    <string name="mylist_empty_series_title">هنوز سریالی در فهرست شما نیست</string>
+    <string name="mylist_empty_message">در صفحه جزئیات هر عنوان «افزودن به فهرست من» را بزنید، یا روی کارت آن دکمه OK را نگه دارید.</string>
+</resources>

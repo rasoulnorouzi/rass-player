@@ -80,6 +80,7 @@ dependencies {
 
     implementation(libs.media3.exoplayer)
     implementation(libs.media3.exoplayer.hls)
+    implementation(libs.media3.exoplayer.dash)
     implementation(libs.media3.datasource.okhttp)
     implementation(libs.media3.session)
     implementation(libs.media3.ui)
@@ -100,6 +101,9 @@ dependencies {
     implementation(libs.okhttp)
     implementation(libs.coil.compose)
     implementation(libs.coil.network.okhttp)
+    // R1.7: QR code of the LAN "add source" page (zxing core only, no camera) + its tiny HTTP server.
+    implementation(libs.zxing.core)
+    implementation(libs.nanohttpd)
     // Xray-core engine (2dust/AndroidLibXrayLite), pinned + verified by scripts/fetch-xray-aar.sh; see docs/third-party.md.
     implementation(files("libs/libv2ray.aar"))
 

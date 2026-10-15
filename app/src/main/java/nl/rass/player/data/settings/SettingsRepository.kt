@@ -13,6 +13,9 @@ import kotlinx.coroutines.flow.update
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 
+/** Updates are published as GitHub Releases on the user's public repo (R8.2). The user can change it. */
+const val DEFAULT_UPDATE_URL = "https://github.com/rasoulnorouzi/rass-player/releases/latest/download/update.json"
+
 enum class ResumeBehavior { ASK, ALWAYS_RESUME, ALWAYS_START_OVER }
 
 enum class SubtitleLanguagePref { FA, EN, OFF }
@@ -33,7 +36,7 @@ data class AppSettings(
     val subtitlesAutoOn: Boolean = true,
     val subtitleStyleJson: String? = null,
     /** R8.2: URL of the user's update.json; null = not configured. */
-    val updateUrl: String? = null,
+    val updateUrl: String? = DEFAULT_UPDATE_URL,
     val autoCheckUpdates: Boolean = false,
     /** R9.2 cache size caps. */
     val imageCacheMb: Int = 150,

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="detail_play">پخش</string>
+    <string name="detail_resume_at">ادامه از %1$s</string>
+    <string name="detail_play_episode">پخش ف%1$s ق%2$s</string>
+    <string name="detail_resume_episode">ادامهٔ ف%1$s ق%2$s از %3$s</string>
+    <string name="detail_start_over">از ابتدا</string>
+    <string name="detail_add_my_list">افزودن به فهرست من</string>
+    <string name="detail_remove_my_list">حذف از فهرست من</string>
+    <string name="detail_mark_watched">دیده‌ام</string>
+    <string name="detail_mark_unwatched">دیده‌نشده</string>
+    <string name="detail_trailer">پیش‌نمایش</string>
+    <string name="detail_cast">بازیگران و عوامل</string>
+    <string name="detail_episodes">قسمت‌ها</string>
+    <string name="detail_sources">منابع:</string>
+    <string name="detail_episode_title">%1$s. %2$s</string>
+    <string name="detail_badge_new">جدید</string>
+    <string name="detail_badge_watched">دیده‌شده</string>
+    <string name="detail_not_found">این عنوان در منابع فعال پیدا نشد.</string>
+    <string name="detail_not_playable">پخش‌شدنی نیست</string>
+    <string name="detail_episode_start_over">پخش از ابتدا</string>
+    <string name="detail_trailer_error">پیش‌نمایش پخش نشد.</string>
+    <string name="detail_season_special">ویژه</string>
+    <string name="detail_season_n">فصل %1$s</string>
+</resources>

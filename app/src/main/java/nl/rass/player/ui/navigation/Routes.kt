@@ -30,6 +30,9 @@ sealed interface Route {
     ) : Route
 
     data class Settings(val section: SettingsSection = SettingsSection.Root) : Route
+
+    /** Full-screen trailer of a title (R11.7); only offered when the feed's trailer is a playable HLS/MP4 URL. */
+    data class Trailer(val catalogKey: String) : Route
 }
 
 enum class MediaType { Movie, Series }

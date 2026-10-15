@@ -22,6 +22,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
+import nl.rass.player.ui.format.fa
 import nl.rass.player.ui.theme.Accent
 import nl.rass.player.ui.theme.TextMuted
 import nl.rass.player.ui.theme.TextPrimary
@@ -50,7 +51,7 @@ fun CardBadge(text: String, modifier: Modifier = Modifier, background: Color = C
 @Composable
 fun RankBadge(rank: Int, modifier: Modifier = Modifier) {
     Text(
-        text = rank.toString(),
+        text = rank.fa(),
         style = MaterialTheme.typography.titleMedium,
         color = TextPrimary,
         modifier = modifier

@@ -1,0 +1,250 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- common -->
+    <string name="set_title">تنظیمات</string>
+    <string name="set_on">روشن</string>
+    <string name="set_off">خاموش</string>
+    <string name="set_save">ذخیره</string>
+    <string name="set_cancel">انصراف</string>
+    <string name="set_close">بستن</string>
+    <string name="set_delete">حذف</string>
+    <string name="set_clear">پاک کردن</string>
+    <string name="set_reset_default">بازگشت به پیش‌فرض</string>
+    <string name="set_loading">در حال بارگذاری…</string>
+    <string name="set_working">در حال انجام…</string>
+    <string name="set_mb">مگابایت</string>
+    <string name="set_secret_set">تنظیم شده</string>
+    <string name="set_secret_unset">تنظیم نشده</string>
+    <string name="set_secret_hint">مقدار فعلی نمایش داده نمی‌شود. مقدار جدید را وارد کنید یا «پاک کردن» را بزنید.</string>
+
+    <!-- sections -->
+    <string name="set_sec_sources">منبع‌ها</string>
+    <string name="set_sec_playback">پخش</string>
+    <string name="set_sec_subtitles">زیرنویس</string>
+    <string name="set_sec_online">زیرنویس آنلاین</string>
+    <string name="set_sec_private">اتصال خصوصی</string>
+    <string name="set_sec_updates">به‌روزرسانی</string>
+    <string name="set_sec_storage">فضای ذخیره‌سازی</string>
+    <string name="set_sec_backup">پشتیبان‌گیری</string>
+    <string name="set_sec_about">دربارهٔ برنامه</string>
+    <string name="set_sec_pin">قفل تنظیمات (PIN)</string>
+    <string name="set_root_sources">افزودن، ویرایش و ترتیب منبع‌های محتوا</string>
+    <string name="set_root_playback">کیفیت پیش‌فرض، پخش خودکار قسمت بعد، ادامهٔ پخش</string>
+    <string name="set_root_subtitles">زبان و ظاهر پیش‌فرض زیرنویس</string>
+    <string name="set_root_online">SubDL و OpenSubtitles</string>
+    <string name="set_root_private">اتصال امن برنامه از طریق پروکسی</string>
+    <string name="set_root_updates">بررسی و نصب نسخهٔ جدید</string>
+    <string name="set_root_storage">اندازهٔ حافظه‌های موقت و پاک‌سازی</string>
+    <string name="set_root_backup">خروجی و بازیابی تنظیمات و فهرست من</string>
+    <string name="set_root_about">نسخه، دستگاه و مجوزها</string>
+    <string name="set_root_pin">رمز چهار رقمی برای ورود به تنظیمات</string>
+    <string name="set_updates_badge">نسخهٔ جدید</string>
+
+    <!-- PIN -->
+    <string name="set_pin_enter">رمز چهار رقمی را وارد کنید</string>
+    <string name="set_pin_new">رمز جدید (چهار رقم)</string>
+    <string name="set_pin_confirm">رمز را دوباره وارد کنید</string>
+    <string name="set_pin_wrong">رمز نادرست است.</string>
+    <string name="set_pin_mismatch">رمزها یکسان نبودند. دوباره تلاش کنید.</string>
+    <string name="set_pin_change">تغییر رمز</string>
+    <string name="set_pin_remove">برداشتن قفل</string>
+
+    <!-- sources -->
+    <string name="set_sources_hint">منبع‌ها به ترتیب اولویت هستند؛ در عنوان تکراری، منبع بالاتر برنده است.</string>
+    <string name="set_sources_empty">هنوز منبعی اضافه نشده است.</string>
+    <string name="set_source_add">افزودن منبع</string>
+    <string name="set_source_add_hint">نشانی سایت یا نشانی فید</string>
+    <string name="set_source_add_phone">افزودن با گوشی (QR)</string>
+    <string name="set_source_add_phone_hint">کد QR را با گوشی بخوانید و نشانی را آنجا بنویسید</string>
+    <string name="set_source_address">نشانی سایت یا فید</string>
+    <string name="set_source_url">نشانی فید</string>
+    <string name="set_source_name_optional">نام (اختیاری)</string>
+    <string name="set_source_interval">بازهٔ به‌روزرسانی</string>
+    <string name="set_source_auth">توکن یا سرآیند دسترسی</string>
+    <string name="set_source_auth_hint">فقط برای سایت‌های خصوصی</string>
+    <string name="set_source_token">توکن دسترسی</string>
+    <string name="set_source_header_name">نام سرآیند سفارشی</string>
+    <string name="set_source_header_value">مقدار سرآیند</string>
+    <string name="set_source_media_hosts">ارسال به سرورهای رسانهٔ همین فید</string>
+    <string name="set_source_over_http">اجازهٔ ارسال از طریق http</string>
+    <string name="set_source_over_http_hint">ناامن است؛ فقط در صورت نیاز روشن کنید.</string>
+    <string name="set_source_discover">جستجوی فید</string>
+    <string name="set_source_discovering">در حال جستجوی فید…</string>
+    <string name="set_source_found">فید پیدا شد: «%1$s» با %2$s عنوان</string>
+    <string name="set_source_found_insecure">(اتصال ناامن، http)</string>
+    <string name="set_source_unnamed">بدون نام</string>
+    <string name="set_source_enable">فعال کردن</string>
+    <string name="set_source_disable">غیرفعال کردن</string>
+    <string name="set_source_test">آزمون اتصال</string>
+    <string name="set_source_testing">در حال آزمون…</string>
+    <string name="set_source_test_ok">موفق: %1$s عنوان</string>
+    <string name="set_source_up">انتقال به بالا</string>
+    <string name="set_source_down">انتقال به پایین</string>
+    <string name="set_source_edit">ویرایش</string>
+    <string name="set_source_delete">حذف منبع</string>
+    <string name="set_source_delete_title">حذف «%1$s»؟</string>
+    <string name="set_source_delete_msg">این منبع و حافظهٔ موقت آن از برنامه پاک می‌شود. محتوای سایت دست نمی‌خورد.</string>
+    <string name="set_source_builtin">منبع آزمایشی داخل برنامه</string>
+    <string name="set_preset_badge">آزمایشی</string>
+    <string name="set_insecure_badge">ناامن</string>
+    <string name="set_lan_steps">۱. گوشی را به همین شبکهٔ وای‌فای وصل کنید.\n۲. کد QR را با دوربین بخوانید.\n۳. نشانی سایت را در صفحه بنویسید و «افزودن» را بزنید.</string>
+    <string name="set_lan_note">این صفحه فقط در شبکهٔ خانه کار می‌کند و پس از یک بار استفاده بسته می‌شود. توکن را از این راه وارد نکنید.</string>
+    <string name="set_lan_added">«%1$s» اضافه شد.</string>
+    <string name="set_lan_no_network">آدرس شبکهٔ محلی پیدا نشد. به وای‌فای یا اترنت وصل شوید.</string>
+
+    <!-- playback -->
+    <string name="set_default_quality">کیفیت پیش‌فرض</string>
+    <string name="set_default_quality_hint">اگر این کیفیت نبود، نزدیک‌ترین انتخاب می‌شود.</string>
+    <string name="set_quality_auto">خودکار</string>
+    <string name="set_autoplay_next">پخش خودکار قسمت بعد</string>
+    <string name="set_resume">ادامهٔ پخش</string>
+    <string name="set_resume_ask">هر بار بپرس</string>
+    <string name="set_resume_always">همیشه از ادامه</string>
+    <string name="set_resume_never">همیشه از اول</string>
+
+    <!-- subtitles -->
+    <string name="set_subtitles_only_fa_en">فقط زیرنویس فارسی و انگلیسی</string>
+    <string name="set_subs_on">زیرنویس به‌صورت پیش‌فرض روشن باشد</string>
+    <string name="set_subs_lang">زبان پیش‌فرض</string>
+    <string name="set_subs_lang_hint">اگر زبان انتخابی نبود، زبان دیگر (فارسی یا انگلیسی) جایگزین می‌شود.</string>
+    <string name="set_lang_fa">فارسی</string>
+    <string name="set_lang_en">انگلیسی</string>
+    <string name="set_sub_color">رنگ متن</string>
+    <string name="set_color_white">سفید</string>
+    <string name="set_color_yellow">زرد</string>
+    <string name="set_color_cyan">فیروزه‌ای</string>
+    <string name="set_color_green">سبز</string>
+    <string name="set_sub_size">اندازه</string>
+    <string name="set_sub_bg">پس‌زمینهٔ تیره</string>
+    <string name="set_sub_bg_opacity">شفافیت پس‌زمینه</string>
+    <string name="set_sub_edge">لبهٔ متن</string>
+    <string name="set_edge_none">بدون لبه</string>
+    <string name="set_edge_outline">دورخط</string>
+    <string name="set_edge_shadow">سایه</string>
+    <string name="set_sub_position">جایگاه عمودی</string>
+    <string name="set_pos_top">بالا</string>
+    <string name="set_pos_upper">نیمهٔ بالا</string>
+    <string name="set_pos_middle">وسط</string>
+    <string name="set_pos_lower">نیمهٔ پایین</string>
+    <string name="set_pos_bottom">پایین</string>
+    <string name="set_sub_sample">این یک نمونهٔ زیرنویس است</string>
+
+    <!-- online subtitles -->
+    <string name="set_online_attribution">زیرنویس‌ها از SubDL و OpenSubtitles.com</string>
+    <string name="set_subdl_enable">استفاده از SubDL</string>
+    <string name="set_subdl_key">کلید API سرویس SubDL</string>
+    <string name="set_os_enable">استفاده از OpenSubtitles.com</string>
+    <string name="set_os_key">کلید API سرویس OpenSubtitles</string>
+    <string name="set_os_user">نام کاربری OpenSubtitles</string>
+    <string name="set_os_pass">گذرواژهٔ OpenSubtitles</string>
+    <string name="set_os_pass_hint">برای دانلود لازم است</string>
+    <string name="set_online_prefer_en">ترجیح زیرنویس انگلیسی</string>
+    <string name="set_online_prefer_en_hint">در نتایج آنلاین انگلیسی بالاتر بیاید</string>
+    <string name="set_online_note">کلیدها و گذرواژه رمزگذاری‌شده روی همین دستگاه ذخیره می‌شوند و در پشتیبان نیستند. جستجو فقط وقتی انجام می‌شود که منبعی زیرنویس نداشته باشد یا از منوی پخش درخواست کنید.</string>
+
+    <!-- private connection -->
+    <string name="set_pc_enable">اتصال خصوصی</string>
+    <string name="set_pc_enable_hint">همهٔ ترافیک برنامه از پروکسی داخلی می‌گذرد</string>
+    <string name="set_pc_kill">قطع اضطراری (Kill switch)</string>
+    <string name="set_pc_kill_hint">اگر اتصال کار نکرد، برنامه مستقیم به اینترنت وصل نمی‌شود</string>
+    <string name="set_pc_auto">انتخاب خودکار سریع‌ترین</string>
+    <string name="set_pc_auto_hint">خاموش: فقط کانفیگ انتخاب‌شده استفاده می‌شود</string>
+    <string name="set_pc_concurrency">آزمون همزمان</string>
+    <string name="set_pc_concurrency_hint">تعداد کانفیگ‌هایی که هم‌زمان آزموده می‌شوند (۱ تا ۴)</string>
+    <string name="set_pc_test_all">آزمون همهٔ کانفیگ‌ها</string>
+    <string name="set_pc_reconnect">اتصال دوباره</string>
+    <string name="set_pc_refresh">به‌روزرسانی اشتراک‌ها</string>
+    <string name="set_pc_working">در حال انجام…</string>
+    <string name="set_pc_tested">آزمون تمام شد.</string>
+    <string name="set_pc_add_ok">%1$s کانفیگ دریافت شد (%2$s ردشده)</string>
+    <string name="set_pc_add_none">کانفیگ قابل‌استفاده‌ای دریافت نشد. پیوند را بررسی کنید.</string>
+    <string name="set_pc_add_fail">انجام نشد. اتصال اینترنت را بررسی کنید.</string>
+    <string name="set_pc_add_sub">افزودن پیوند اشتراک</string>
+    <string name="set_pc_add_sub_hint">پیوند اشتراک Xray یا فهرست vless/vmess/trojan/ss</string>
+    <string name="set_pc_sub_url">پیوند اشتراک</string>
+    <string name="set_pc_sub_name">نام (اختیاری)</string>
+    <string name="set_pc_sub_unnamed">اشتراک بدون نام</string>
+    <string name="set_pc_sub_count">%1$s کانفیگ</string>
+    <string name="set_pc_sub_error">آخرین به‌روزرسانی ناموفق بود</string>
+    <string name="set_pc_sub_remove_hint">حذف</string>
+    <string name="set_pc_sub_remove_title">حذف این اشتراک؟</string>
+    <string name="set_pc_sub_remove_msg">اشتراک و کانفیگ‌های آن از دستگاه پاک می‌شود.</string>
+    <string name="set_pc_configs">کانفیگ‌ها: %1$s (برای انتخاب دستی، یکی را بزنید)</string>
+    <string name="set_pc_active">فعال</string>
+    <string name="set_pc_untested">آزموده نشده</string>
+    <string name="set_pc_failed">ناموفق</string>
+    <string name="set_pc_state_off">خاموش</string>
+    <string name="set_pc_state_testing">در حال آزمون کانفیگ‌ها…</string>
+    <string name="set_pc_state_starting">در حال راه‌اندازی…</string>
+    <string name="set_pc_state_connected">متصل: %1$s</string>
+    <string name="set_pc_fail_no_configs">کانفیگی وجود ندارد؛ یک پیوند اشتراک اضافه کنید.</string>
+    <string name="set_pc_fail_none_work">هیچ کانفیگی کار نمی‌کند؛ دوباره تلاش می‌شود.</string>
+    <string name="set_pc_fail_selected_missing">کانفیگ انتخاب‌شده دیگر وجود ندارد.</string>
+    <string name="set_pc_fail_engine">موتور اتصال راه‌اندازی نشد.</string>
+
+    <!-- updates -->
+    <string name="set_updates_current">نسخهٔ فعلی: %1$s</string>
+    <string name="set_updates_flag">نسخهٔ جدید %1$s آماده است.</string>
+    <string name="set_updates_url">نشانی فایل update.json</string>
+    <string name="set_updates_url_hint">نشانی پیش‌فرض، انتشارهای GitHub است. می‌توانید تغییرش دهید.</string>
+    <string name="set_updates_url_invalid">نشانی معتبر نیست.</string>
+    <string name="set_updates_auto">بررسی خودکار روزانه</string>
+    <string name="set_updates_auto_hint">فقط علامت «نسخهٔ جدید» را نشان می‌دهد؛ چیزی نصب نمی‌کند</string>
+    <string name="set_updates_check">بررسی به‌روزرسانی</string>
+    <string name="set_updates_checking">در حال بررسی…</string>
+    <string name="set_updates_uptodate">برنامه به‌روز است.</string>
+    <string name="set_updates_download">دانلود نسخهٔ %1$s</string>
+    <string name="set_updates_downloading">در حال دانلود: %1$s٪</string>
+    <string name="set_updates_downloading_unknown">در حال دانلود…</string>
+    <string name="set_updates_verifying">در حال بررسی امضا و SHA-256…</string>
+    <string name="set_updates_install">نصب به‌روزرسانی</string>
+    <string name="set_updates_verified">فایل تأیید شد.</string>
+    <string name="set_updates_installing">در حال نصب…</string>
+    <string name="set_updates_allow">اجازهٔ نصب برنامه از منابع ناشناس</string>
+    <string name="set_updates_allow_hint">یک بار لازم است؛ سپس به همین صفحه برگردید.</string>
+
+    <!-- storage -->
+    <string name="set_storage_total">مجموع: %1$s</string>
+    <string name="set_storage_not_in_all">در «پاک کردن همه» نیست</string>
+    <string name="set_storage_clear">پاک کردن</string>
+    <string name="set_storage_clear_all">پاک کردن همهٔ حافظه‌های موقت</string>
+    <string name="set_storage_clear_all_msg">همهٔ حافظه‌های موقت پاک می‌شود. فهرست من، پیشرفت تماشا، منبع‌ها و تنظیمات سالم می‌مانند.</string>
+    <string name="set_storage_clear_all_user_msg">علاوه بر حافظه‌های موقت، داده‌های علامت‌خورده نیز برای همیشه پاک می‌شوند. ادامه می‌دهید؟</string>
+    <string name="set_storage_clear_one_title">پاک کردن «%1$s»؟</string>
+    <string name="set_storage_clear_one_msg">%1$s آزاد می‌شود.</string>
+    <string name="set_storage_refresh">محاسبهٔ دوباره</string>
+    <string name="set_storage_cap">سقف مجموع حافظهٔ موقت</string>
+    <string name="set_storage_cap_hint">اگر از سقف بگذرد، بزرگ‌ترین حافظه‌ها خودکار پاک می‌شوند (هنگام باز کردن این صفحه).</string>
+    <string name="set_storage_cap_off">بدون سقف</string>
+    <string name="set_storage_also_hint">«پاک کردن همه» این موارد را هم پاک کند (پیش‌فرض: خیر):</string>
+    <string name="set_storage_also_mylist">فهرست من</string>
+    <string name="set_storage_also_progress">پیشرفت تماشا</string>
+    <string name="set_storage_also_sources">منبع‌ها</string>
+    <string name="set_storage_also_settings">تنظیمات</string>
+
+    <!-- backup -->
+    <string name="set_backup_hint">پشتیبان شامل منبع‌ها، تنظیمات، فهرست من، پیشرفت و تاریخچه است.</string>
+    <string name="set_backup_tokens">شامل توکن‌ها و سرآیندهای دسترسی</string>
+    <string name="set_backup_tokens_hint">اگر روشن باشد، توکن‌ها بدون رمزگذاری در فایل نوشته می‌شوند. فایل را امن نگه دارید.</string>
+    <string name="set_backup_export">ساخت فایل پشتیبان</string>
+    <string name="set_backup_export_hint">در پوشهٔ Download برنامه ذخیره می‌شود</string>
+    <string name="set_backup_folder">پوشهٔ پشتیبان: %1$s</string>
+    <string name="set_backup_exported">ذخیره شد: %1$s</string>
+    <string name="set_backup_export_failed">ساخت فایل پشتیبان ناموفق بود.</string>
+    <string name="set_backup_import_title">بازیابی از فایل</string>
+    <string name="set_backup_none">فایل پشتیبانی در پوشه پیدا نشد. فایل را در همین پوشه بگذارید (نام باید با rass-player-backup- شروع شود).</string>
+    <string name="set_backup_import">بازیابی</string>
+    <string name="set_backup_import_confirm_title">بازیابی پشتیبان؟</string>
+    <string name="set_backup_import_confirm_msg">از «%1$s» بازیابی می‌شود. تنظیمات جایگزین می‌شود و منبع‌ها، فهرست من و پیشرفت ادغام می‌شوند.</string>
+    <string name="set_backup_imported">بازیابی شد: %1$s منبع، %2$s مورد فهرست من، %3$s پیشرفت</string>
+    <string name="set_backup_import_failed">خواندن فایل پشتیبان ناموفق بود.</string>
+
+    <!-- about -->
+    <string name="set_about_version">نسخهٔ برنامه</string>
+    <string name="set_about_abis">معماری پردازنده</string>
+    <string name="set_about_ram">حافظهٔ RAM</string>
+    <string name="set_about_android">نسخهٔ اندروید</string>
+    <string name="set_about_device">دستگاه</string>
+    <string name="set_about_sources">منبع‌های فعال</string>
+    <string name="set_about_licenses">مجوزها و کتابخانه‌ها</string>
+</resources>

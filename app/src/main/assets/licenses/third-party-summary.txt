@@ -1,0 +1,17 @@
+Rass_player - third-party components (summary of docs/third-party.md)
+
+Xray-core engine via libv2ray.aar (2dust/AndroidLibXrayLite v26.10.10): wrapper LGPL-3.0, Xray-core MPL-2.0, Go runtime BSD-3-Clause. The unmodified prebuilt library is linked as a separate native library, so it stays replaceable.
+
+Vazirmatn font: SIL Open Font License 1.1 (see Vazirmatn-OFL.txt).
+
+AndroidX, Jetpack Compose, Compose for TV, Media3, Room, DataStore, WorkManager, Navigation 3: Apache License 2.0 (Google).
+
+Hilt / Dagger: Apache License 2.0. Kotlin, kotlinx.coroutines, kotlinx.serialization: Apache License 2.0 (JetBrains).
+
+OkHttp / Okio: Apache License 2.0 (Square). Coil: Apache License 2.0.
+
+ZXing core (QR code): Apache License 2.0. NanoHTTPD: BSD 3-Clause License.
+
+Online subtitles: provided by SubDL (subdl.com) and OpenSubtitles.com through their public APIs, with the user's own keys and account.
+
+Test media: Blender open movies (Creative Commons) and public-domain items from the Internet Archive; the license of each title is listed in the generated test feeds.

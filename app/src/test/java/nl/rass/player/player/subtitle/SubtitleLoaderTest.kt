@@ -71,4 +71,33 @@ class SubtitleLoaderTest {
         val e2 = assertFailsWith<SubtitleLoadException> { loader().load(server.url("/junk.srt").toString()) }
         assertEquals(SubtitleLoadException.Reason.NO_CUES, e2.reason)
     }
+
+    @Test
+    fun readsAssetUrlsThroughTheAssetReader() = runBlocking {
+        val srt = "1\n00:00:01,000 --> 00:00:02,000\nAsset line\n".toByteArray()
+        val assets = nl.rass.player.data.feed.AssetReader { path ->
+            if (path == "test-feeds/subs/a.en.srt") java.io.ByteArrayInputStream(srt) else null
+        }
+        val l = SubtitleLoader(client, parseDispatcher = Dispatchers.Unconfined, assets = assets, ioDispatcher = Dispatchers.Unconfined)
+        assertEquals("Asset line", l.load("asset:///test-feeds/subs/a.en.srt").cuesAt(1_500).single().text)
+        val e = assertFailsWith<SubtitleLoadException> { l.load("asset:///test-feeds/subs/missing.srt") }
+        assertEquals(SubtitleLoadException.Reason.HTTP, e.reason)
+        assertEquals(0, server.requestCount)
+    }
+
+    @Test
+    fun sourceHeaderGoesOnlyToTheSubtitleOrigin() = runBlocking {
+        val other = MockWebServer()
+        other.start()
+        try {
+            other.enqueue(MockResponse().setBody("1\n00:00:01,000 --> 00:00:02,000\nMoved\n"))
+            server.enqueue(MockResponse().setResponseCode(302).setHeader("Location", other.url("/moved.srt").toString()))
+            val track = loader().load(server.url("/a.srt").toString(), headers = mapOf("X-Feed-Key" to "secret"))
+            assertEquals("Moved", track.cuesAt(1_500).single().text)
+            assertEquals("secret", server.takeRequest().getHeader("X-Feed-Key"))
+            assertEquals(null, other.takeRequest().getHeader("X-Feed-Key"))
+        } finally {
+            other.shutdown()
+        }
+    }
 }
