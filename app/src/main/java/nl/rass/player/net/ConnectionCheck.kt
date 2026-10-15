@@ -53,7 +53,11 @@ class ConnectionChecker @Inject constructor(
     suspend fun viaApp(): CheckOutcome = fetch(shared.newBuilder().callTimeout(25, TimeUnit.SECONDS).build())
 
     suspend fun direct(): CheckOutcome =
-        fetch(plain.newBuilder().proxy(Proxy.NO_PROXY).callTimeout(15, TimeUnit.SECONDS).build())
+        // Own pool: the deliberate direct connection is closed right after, never reused by anything else.
+        fetch(
+            plain.newBuilder().proxy(Proxy.NO_PROXY).connectionPool(okhttp3.ConnectionPool(0, 1, TimeUnit.SECONDS))
+                .callTimeout(15, TimeUnit.SECONDS).build(),
+        )
 
     private suspend fun fetch(client: OkHttpClient): CheckOutcome = withContext(Dispatchers.IO) {
         var blocked = false
