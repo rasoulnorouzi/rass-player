@@ -201,7 +201,18 @@ fun <T> ChoiceRow(
 
 @Composable
 fun SettingsDialog(onDismiss: () -> Unit, title: String? = null, width: androidx.compose.ui.unit.Dp = 720.dp, content: @Composable () -> Unit) {
-    Dialog(onDismissRequest = onDismiss) {
+    // Dialogs get their own window; re-apply the app's scaled density and RTL so they match the rest
+    // of the UI (otherwise they render ~2× larger and push the action buttons off screen).
+    val appDensity = androidx.compose.ui.platform.LocalDensity.current
+    val appDirection = androidx.compose.ui.platform.LocalLayoutDirection.current
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false),
+    ) {
+      androidx.compose.runtime.CompositionLocalProvider(
+          androidx.compose.ui.platform.LocalDensity provides appDensity,
+          androidx.compose.ui.platform.LocalLayoutDirection provides appDirection,
+      ) {
         val fr = remember { FocusRequester() }
         LaunchedEffect(Unit) {
             repeat(3) {
@@ -224,6 +235,7 @@ fun SettingsDialog(onDismiss: () -> Unit, title: String? = null, width: androidx
             if (title != null) Text(title, style = MaterialTheme.typography.headlineMedium, color = TextPrimary)
             content()
         }
+      }
     }
 }
 
@@ -270,6 +282,8 @@ fun TvTextField(
     placeholder: String? = null,
     /** Long text (links, keys): shows the hint that the Google TV phone app can type/paste here. */
     phoneHint: Boolean = false,
+    /** Called when the keyboard's ✓/Done/Go key is pressed. */
+    onDone: (() -> Unit)? = null,
 ) {
     var focused by remember { mutableStateOf(false) }
     val kb = LocalSoftwareKeyboardController.current
@@ -286,7 +300,11 @@ fun TvTextField(
             ),
             cursorBrush = Brush.linearGradient(listOf(Color.White, Color.White)),
             visualTransformation = if (password) PasswordVisualTransformation() else VisualTransformation.None,
-            keyboardOptions = KeyboardOptions(keyboardType = if (password) KeyboardType.Password else keyboardType),
+            keyboardOptions = KeyboardOptions(
+                keyboardType = if (password) KeyboardType.Password else keyboardType,
+                imeAction = if (onDone != null) androidx.compose.ui.text.input.ImeAction.Done else androidx.compose.ui.text.input.ImeAction.Default,
+            ),
+            keyboardActions = androidx.compose.foundation.text.KeyboardActions(onDone = { kb?.hide(); onDone?.invoke() }),
             decorationBox = { inner ->
                 Box(Modifier.fillMaxWidth()) {
                     if (value.isEmpty() && placeholder != null) Text(placeholder, color = TextMuted, style = MaterialTheme.typography.bodyLarge)

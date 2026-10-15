@@ -240,7 +240,19 @@ private fun SourceFormDialog(editing: Source?, vm: SourcesViewModel, onDismiss: 
                     f.address, { f = f.copy(address = it); if (editing == null) vm.resetForm() },
                     stringResource(if (editing == null) R.string.set_source_address else R.string.set_source_url),
                     ltr = true, placeholder = "https://mysite.nl", phoneHint = true, keyboardType = androidx.compose.ui.text.input.KeyboardType.Uri,
+                    onDone = { if (editing == null) vm.discoverAndAdd(f, onDismiss) else vm.saveEdit(editing, f, onDismiss) },
                 )
+            }
+            // Primary action right under the address, so the on-screen keyboard can't hide it.
+            item {
+                Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+                    if (editing != null) {
+                        PillButton(stringResource(R.string.set_save), { vm.saveEdit(editing, f, onDismiss) }, style = PillStyle.Accent)
+                    } else {
+                        PillButton(stringResource(R.string.set_source_add_confirm), { vm.discoverAndAdd(f, onDismiss) }, style = PillStyle.Accent)
+                        PillButton(stringResource(R.string.set_source_discover), { vm.discover(f) })
+                    }
+                }
             }
             item { TvTextField(f.name, { f = f.copy(name = it) }, stringResource(R.string.set_source_name_optional)) }
             item { ChoiceRow(stringResource(R.string.set_source_interval), intervals, f.refreshMin, { f = f.copy(refreshMin = it) }) }
@@ -270,9 +282,7 @@ private fun SourceFormDialog(editing: Source?, vm: SourcesViewModel, onDismiss: 
             if (editing != null) {
                 PillButton(stringResource(R.string.set_save), { vm.saveEdit(editing, f, onDismiss) }, style = PillStyle.Accent)
             } else {
-                val d = discover
-                if (d is DiscoverUi.Found) PillButton(stringResource(R.string.set_save), { vm.add(f, d, onDismiss) }, style = PillStyle.Accent)
-                PillButton(stringResource(R.string.set_source_discover), { vm.discover(f) }, style = if (d is DiscoverUi.Found) PillStyle.Secondary else PillStyle.Accent)
+                PillButton(stringResource(R.string.set_source_add_confirm), { vm.discoverAndAdd(f, onDismiss) }, style = PillStyle.Accent)
             }
             PillButton(stringResource(R.string.set_cancel), onDismiss)
         }

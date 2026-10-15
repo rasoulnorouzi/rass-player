@@ -134,6 +134,29 @@ class SourcesViewModel @Inject constructor(private val repo: SourceRepository) :
         }
     }
 
+    /**
+     * One-press add: discovers the feed and saves it right away. An insecure (http) result stops at
+     * [DiscoverUi.Found] so the user confirms it explicitly with the save button.
+     */
+    fun discoverAndAdd(form: SourceForm, done: () -> Unit) {
+        val current = _discover.value
+        if (current is DiscoverUi.Found) { add(form, current, done); return }
+        _formError.value = null
+        val hn = form.headerName.trim()
+        if (hn.isNotEmpty()) AuthHeaders.validateHeaderName(hn)?.let { _discover.value = DiscoverUi.Error(it.messageFa); return }
+        _discover.value = DiscoverUi.Working
+        viewModelScope.launch {
+            when (val d = repo.discover(form.address, form.auth())) {
+                is DiscoveryResult.Found -> {
+                    val found = DiscoverUi.Found(d.feedUrl, d.feedName, d.titleCount, d.insecure)
+                    _discover.value = found
+                    if (!d.insecure) add(form, found, done)
+                }
+                is DiscoveryResult.Failed -> _discover.value = DiscoverUi.Error(d.messageFa)
+            }
+        }
+    }
+
     /** Saves the discovered feed as a new source. Calls [done] on success. */
     fun add(form: SourceForm, found: DiscoverUi.Found, done: () -> Unit) {
         viewModelScope.launch {
