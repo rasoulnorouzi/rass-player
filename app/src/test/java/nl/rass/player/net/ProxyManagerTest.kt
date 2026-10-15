@@ -316,4 +316,144 @@ class ProxyManagerTest {
         assertEquals(1, r.store.data.subscriptions.size)
         assertEquals(ProxyState.Connected("N2", 45), r.manager.state.value)
     }
+
+    // ---- manage servers: remove / disable / manual links / remove all --------------------------------
+
+    private val subBody = listOf(1, 2, 3).joinToString("\n") { "trojan://pw$it@n$it.example.invalid:443#N$it" }
+
+    private fun TestScope.subRig(body: () -> String = { subBody }): Rig {
+        val r = rig(configs = emptyList(), latencies = emptyMap(), fetcher = SubscriptionFetcher { _, _ -> body() })
+        return r
+    }
+
+    @Test
+    fun removedServerStaysRemovedAfterRefreshAndCanBeRestored() = runTest {
+        val r = subRig()
+        r.manager.addSubscription("https://panel.example.invalid/sub/t")
+        runCurrent()
+        val subId = r.store.data.subscriptions.single().id
+        val n2 = r.store.data.configs.first { it.name == "N2" }
+        r.manager.removeConfig(n2.id)
+        assertEquals(listOf("N1", "N3"), r.store.data.configs.map { it.name })
+        r.manager.refreshSubscriptions()
+        assertEquals(listOf("N1", "N3"), r.store.data.configs.map { it.name }, "refresh must not bring it back")
+        assertEquals(1, r.manager.removedCount(subId))
+        r.manager.restoreRemoved(subId)
+        assertEquals(setOf("N1", "N2", "N3"), r.store.data.configs.map { it.name }.toSet())
+        assertEquals(0, r.manager.removedCount(subId))
+    }
+
+    @Test
+    fun removedStoreHoldsHashesNotSecrets() = runTest {
+        val r = subRig()
+        r.manager.addSubscription("https://panel.example.invalid/sub/t")
+        runCurrent()
+        r.manager.removeConfig(r.store.data.configs.first().id)
+        val stored = r.store.data.removed.values.flatten()
+        assertEquals(1, stored.size)
+        assertTrue(stored.all { Regex("[0-9a-f]{16}").matches(it) })
+    }
+
+    @Test
+    fun disabledServerIsSkippedByAutoSelectAndTests() = runTest {
+        val r = rig()
+        assertEquals(ProxyState.Connected("fast", 80), r.manager.state.value)
+        r.manager.setConfigDisabled("fast", true)
+        runCurrent()
+        assertTrue("fast" !in r.tester.batches.last())
+        assertEquals(ProxyState.Connected("mid", 80), r.manager.state.value)
+        r.tester.batches.clear()
+        r.manager.testAll()
+        assertTrue(r.tester.batches.flatten().none { it == "fast" })
+        r.manager.setConfigDisabled("fast", false)
+        runCurrent()
+        assertEquals(ProxyState.Connected("fast", 80), r.manager.state.value)
+    }
+
+    @Test
+    fun disabledMarkSurvivesRefresh() = runTest {
+        val r = subRig()
+        r.manager.addSubscription("https://panel.example.invalid/sub/t")
+        runCurrent()
+        val n1 = r.store.data.configs.first { it.name == "N1" }
+        r.manager.setConfigDisabled(n1.id, true)
+        r.manager.refreshSubscriptions()
+        assertTrue(r.store.data.isDisabled(r.store.data.configs.first { it.name == "N1" }))
+    }
+
+    @Test
+    fun manualSelectReEnablesADisabledServer() = runTest {
+        val r = rig()
+        r.manager.setConfigDisabled("slow", true)
+        r.manager.selectConfig("slow")
+        runCurrent()
+        assertTrue(r.store.data.disabled.isEmpty())
+        assertEquals(ProxyState.Connected("slow", 80), r.manager.state.value)
+    }
+
+    @Test
+    fun singleLinkAddAndRemove() = runTest {
+        val r = rig(configs = emptyList(), latencies = emptyMap())
+        val link = "vless://11111111-2222-3333-4444-555555555555@one.example.invalid:443?type=ws&security=tls#One"
+        assertEquals(AddLinkResult.ADDED, r.manager.addConfigLink(link))
+        assertEquals(AddLinkResult.DUPLICATE, r.manager.addConfigLink(link, "Other name"))
+        assertEquals(AddLinkResult.INVALID, r.manager.addConfigLink("vless://"))
+        assertEquals(AddLinkResult.INVALID, r.manager.addConfigLink("https://example.invalid"))
+        val c = r.store.data.configs.single()
+        assertTrue(c.isManual)
+        assertEquals("One", c.name)
+        r.manager.removeConfig(c.id)
+        assertTrue(r.store.data.configs.isEmpty())
+        assertTrue(r.store.data.removed.isEmpty(), "manual servers leave no exclusion entry")
+    }
+
+    @Test
+    fun removeAllClearsEverythingAndTurnsOff() = runTest {
+        val r = subRig()
+        r.manager.addSubscription("https://panel.example.invalid/sub/t")
+        r.manager.addConfigLink("trojan://pw@m.example.invalid:443#M")
+        runCurrent()
+        r.manager.removeConfig(r.store.data.configs.first { it.name == "N1" }.id)
+        r.manager.setConfigDisabled(r.store.data.configs.first { it.name == "N2" }.id, true)
+        r.manager.removeAll()
+        runCurrent()
+        val d = r.store.data
+        assertTrue(d.subscriptions.isEmpty() && d.configs.isEmpty() && d.results.isEmpty())
+        assertTrue(d.removed.isEmpty() && d.disabled.isEmpty())
+        assertEquals(false, d.settings.enabled)
+        assertEquals(ProxyState.Off, r.manager.state.value)
+    }
+}
+
+class ConfigFingerprintTest {
+    private fun cfg(link: String) = SubscriptionParser.parse(link).configs.single()
+
+    @Test
+    fun ignoresNameAndTransportButNotServerOrSecret() {
+        val a = cfg("trojan://pw@h.example.invalid:443#A")
+        val b = cfg("trojan://pw@h.example.invalid:443?type=ws&security=tls#B")
+        assertEquals(a.fingerprint, b.fingerprint)
+        assertTrue(a.fingerprint != cfg("trojan://pw2@h.example.invalid:443#A").fingerprint)
+        assertTrue(a.fingerprint != cfg("trojan://pw@h.example.invalid:444#A").fingerprint)
+        assertTrue(a.fingerprint != cfg("trojan://pw@h2.example.invalid:443#A").fingerprint)
+    }
+
+    @Test
+    fun isShortHashWithoutSecret() {
+        val f = cfg("trojan://supersecretpw@h.example.invalid:443#A").fingerprint
+        assertTrue(Regex("[0-9a-f]{16}").matches(f))
+    }
+
+    @Test
+    fun coversAllLinkProtocols() {
+        val uuid = "11111111-2222-3333-4444-555555555555"
+        val links = listOf(
+            "vless://$uuid@a.example.invalid:443#v",
+            "trojan://pw@b.example.invalid:443#t",
+            "ss://YWVzLTI1Ni1nY206cHc=@c.example.invalid:8388#s",
+            "hy2://auth@d.example.invalid:443#h",
+        )
+        val fps = links.map { cfg(it).fingerprint }
+        assertEquals(4, fps.toSet().size)
+    }
 }

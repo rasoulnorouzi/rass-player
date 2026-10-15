@@ -40,4 +40,12 @@ class LanEntryServerTest {
     @Test fun legacyAddressFieldStillWorks() {
         assertEquals(PhoneRequest.Submit("", "https://s.nl"), eval(LanMode.SOURCE, true, "c" to "abc", "address" to "https://s.nl"))
     }
+
+    @Test fun configModeAcceptsOnlyShareLinks() {
+        assertEquals(
+            PhoneRequest.Submit("n", "vless://id@h.example.invalid:443#x"),
+            eval(LanMode.CONFIG, true, "c" to "abc", "value" to " vless://id@h.example.invalid:443#x ", "name" to "n"),
+        )
+        assertTrue(eval(LanMode.CONFIG, true, "c" to "abc", "value" to "https://x.io") is PhoneRequest.Invalid)
+    }
 }

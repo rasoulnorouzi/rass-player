@@ -11,6 +11,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.style.TextDirection
+import androidx.compose.ui.unit.sp
+import nl.rass.player.ui.theme.Bg
+import nl.rass.player.ui.theme.SurfaceRaised
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -27,10 +35,12 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import nl.rass.player.R
+import nl.rass.player.data.source.PresetSources
 import nl.rass.player.data.source.RefreshInterval
 import nl.rass.player.data.source.Source
 import nl.rass.player.ui.components.PillButton
 import nl.rass.player.ui.components.PillStyle
+import nl.rass.player.ui.components.SectionHeader
 import nl.rass.player.ui.format.fa
 import nl.rass.player.ui.format.formatIntervalFa
 import nl.rass.player.ui.theme.Accent
@@ -46,11 +56,33 @@ fun SourcesPage(onBack: () -> Unit, vm: SourcesViewModel = hiltViewModel()) {
     var adding by remember { mutableStateOf(false) }
     var actions by remember { mutableStateOf<Source?>(null) }
     var deleting by remember { mutableStateOf<Source?>(null) }
+    var confirmRemovePresets by remember { mutableStateOf(false) }
+    var confirmRestorePresets by remember { mutableStateOf(false) }
 
     SettingsPage(stringResource(R.string.set_sec_sources), onBack, subtitle = stringResource(R.string.set_sources_hint)) {
-        item { SettingRow(stringResource(R.string.set_source_add), { vm.resetForm(); adding = true }, subtitle = stringResource(R.string.set_source_add_hint)) }
-        item { SettingRow(stringResource(R.string.set_source_add_phone), { vm.startLan() }, subtitle = stringResource(R.string.set_source_add_phone_hint)) }
+        item {
+            ActionBar {
+                PillButton(stringResource(R.string.set_source_add), { vm.resetForm(); adding = true }, iconRes = R.drawable.ic_add, style = PillStyle.Accent)
+                PillButton(stringResource(R.string.set_source_add_phone), { vm.startLan() }, iconRes = R.drawable.ic_phone)
+                if (!sources.isNullOrEmpty()) PillButton(
+                    stringResource(R.string.set_source_test_all),
+                    { sources.orEmpty().forEach { vm.test(it) } }, iconRes = R.drawable.ic_check,
+                )
+            }
+        }
+        item { SectionHeader(stringResource(R.string.set_sources_list_header), Modifier.padding(top = 12.dp, start = 8.dp)) }
         val list = sources.orEmpty()
+        val presetCount = list.count { it.isPreset }
+        val missingPresets = sources != null && PresetSources.ALL.any { p -> list.none { it.url == p.url } }
+        if (presetCount > 0) item {
+            SettingRow(
+                stringResource(R.string.set_presets_remove_all), { confirmRemovePresets = true },
+                subtitle = stringResource(R.string.set_presets_remove_all_hint, presetCount.fa()),
+            )
+        }
+        if (missingPresets) item {
+            SettingRow(stringResource(R.string.set_presets_restore), { confirmRestorePresets = true }, subtitle = stringResource(R.string.set_presets_restore_hint))
+        }
         if (sources != null && list.isEmpty()) item { StatusText(stringResource(R.string.set_sources_empty)) }
         items(list, key = { it.id }) { s ->
             val t = tests[s.id]
@@ -61,7 +93,8 @@ fun SourcesPage(onBack: () -> Unit, vm: SourcesViewModel = hiltViewModel()) {
                 trailing = {
                     if (s.isPreset) Badge(stringResource(R.string.set_preset_badge))
                     if (s.isInsecure) Badge(stringResource(R.string.set_insecure_badge))
-                    SwitchVisual(s.enabled)
+                    SwitchVisual(s.enabled, showLabel = true)
+                    DeleteButton { deleting = s }
                 },
             )
         }
@@ -94,6 +127,17 @@ fun SourcesPage(onBack: () -> Unit, vm: SourcesViewModel = hiltViewModel()) {
         )
     }
 
+    if (confirmRemovePresets) ConfirmDialog(
+        stringResource(R.string.set_presets_remove_title), stringResource(R.string.set_presets_remove_msg),
+        stringResource(R.string.set_delete), stringResource(R.string.set_cancel),
+        onConfirm = { vm.removeAllPresets(); confirmRemovePresets = false }, onDismiss = { confirmRemovePresets = false },
+    )
+    if (confirmRestorePresets) ConfirmDialog(
+        stringResource(R.string.set_presets_restore_title), stringResource(R.string.set_presets_restore_msg),
+        stringResource(R.string.set_presets_restore), stringResource(R.string.set_cancel),
+        onConfirm = { vm.restorePresets(); confirmRestorePresets = false }, onDismiss = { confirmRestorePresets = false },
+    )
+
     if (lan != LanUi.Off) LanDialog(lan, onClose = { vm.stopLan() })
 }
 
@@ -114,27 +158,67 @@ private fun sourceSubtitle(s: Source, t: SourceTestUi?): String {
 @Composable
 private fun Badge(text: String) {
     Text(
-        text, style = MaterialTheme.typography.labelMedium, color = TextPrimary,
-        modifier = Modifier.clip(RoundedCornerShape(50)).background(Accent.copy(alpha = 0.7f)).padding(horizontal = 12.dp, vertical = 4.dp),
+        text, style = MaterialTheme.typography.labelSmall, color = TextMuted,
+        modifier = Modifier.border(1.dp, Color(0x55FFFFFF), RoundedCornerShape(50)).padding(horizontal = 8.dp, vertical = 1.dp),
     )
 }
 
 @Composable
 fun LanDialog(lan: LanUi, onClose: () -> Unit, title: String = stringResource(R.string.set_source_add_phone)) {
-    SettingsDialog(onClose, title, width = 760.dp) {
+    SettingsDialog(onClose, title, width = 560.dp) {
         when (lan) {
-            is LanUi.Waiting -> Row(horizontalArrangement = Arrangement.spacedBy(24.dp), verticalAlignment = Alignment.CenterVertically) {
-                QrCode(lan.url, Modifier.size(300.dp))
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.weight(1f)) {
-                    Text(stringResource(R.string.set_lan_steps), style = MaterialTheme.typography.bodyLarge, color = TextPrimary)
-                    Text(stringResource(R.string.set_lan_note), style = MaterialTheme.typography.labelMedium, color = TextMuted)
+            is LanUi.Waiting -> {
+                val code = remember(lan.url) { lan.url.substringAfter("c=", "").substringBefore('&') }
+                Row(horizontalArrangement = Arrangement.spacedBy(20.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        LanStep("۱", stringResource(R.string.set_lan_step1))
+                        LanStep("۲", stringResource(R.string.set_lan_step2))
+                        LanStep("۳", stringResource(R.string.set_lan_step3))
+                    }
+                    QrCode(lan.url, Modifier.size(200.dp))
                 }
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text(stringResource(R.string.set_lan_url_label), style = MaterialTheme.typography.bodyMedium, color = LanText)
+                    Text(
+                        lan.url.substringBefore("?c="),
+                        style = MaterialTheme.typography.bodyLarge.copy(fontFamily = FontFamily.Monospace, textDirection = TextDirection.Ltr),
+                        color = TextPrimary,
+                        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp)).background(Bg).padding(horizontal = 14.dp, vertical = 10.dp),
+                    )
+                }
+                if (code.isNotEmpty()) Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+                    Text(stringResource(R.string.set_lan_code), style = MaterialTheme.typography.bodyMedium, color = LanText)
+                    Text(
+                        code,
+                        style = MaterialTheme.typography.headlineSmall.copy(
+                            fontFamily = FontFamily.Monospace, textDirection = TextDirection.Ltr, letterSpacing = 3.sp,
+                        ),
+                        color = TextPrimary,
+                        modifier = Modifier.clip(RoundedCornerShape(10.dp)).background(Bg).padding(horizontal = 14.dp, vertical = 8.dp),
+                    )
+                }
+                Text(stringResource(R.string.set_lan_note_short), style = MaterialTheme.typography.bodyMedium, color = LanText)
             }
             is LanUi.Added -> Text(stringResource(R.string.set_lan_added, lan.name), style = MaterialTheme.typography.bodyLarge, color = TextPrimary)
             LanUi.NoNetwork -> Text(stringResource(R.string.set_lan_no_network), style = MaterialTheme.typography.bodyLarge, color = TextPrimary)
             LanUi.Off -> Unit
         }
-        PillButton(stringResource(R.string.set_close), onClose)
+        PillButton(stringResource(R.string.set_close), onClose, style = PillStyle.Accent)
+    }
+}
+
+private val LanText = Color(0xFFD4D4D8)
+
+@Composable
+private fun LanStep(n: String, text: String) {
+    Row(
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp)).background(SurfaceRaised).padding(horizontal = 12.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Box(Modifier.size(28.dp).clip(CircleShape).background(Accent), contentAlignment = Alignment.Center) {
+            Text(n, style = MaterialTheme.typography.labelMedium, color = TextPrimary)
+        }
+        Text(text, style = MaterialTheme.typography.bodyMedium, color = TextPrimary, modifier = Modifier.weight(1f))
     }
 }
 

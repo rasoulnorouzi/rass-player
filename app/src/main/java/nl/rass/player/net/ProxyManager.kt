@@ -137,7 +137,12 @@ class ProxyManager @Inject constructor(
     suspend fun setEnabled(enabled: Boolean) = updateSettings { it.copy(enabled = enabled) }
     suspend fun setKillSwitch(on: Boolean) = updateSettings(restart = false) { it.copy(killSwitch = on) }
     suspend fun setAutoSelect(auto: Boolean) = updateSettings { it.copy(autoSelect = auto) }
-    suspend fun selectConfig(id: String) = updateSettings { it.copy(autoSelect = false, selectedConfigId = id) }
+    /** Manual pick. Using a server also re-enables it if it was disabled. */
+    suspend fun selectConfig(id: String) {
+        val fp = _data.value.configs.firstOrNull { it.id == id }?.fingerprint
+        _data.value = store.update { d -> if (fp == null) d else d.copy(disabled = d.disabled - fp) }
+        updateSettings { it.copy(autoSelect = false, selectedConfigId = id) }
+    }
     suspend fun setTestConcurrency(n: Int) =
         updateSettings(restart = false) { it.copy(testConcurrency = TestPlanner.clampConcurrency(n)) }
 
@@ -155,9 +160,89 @@ class ProxyManager @Inject constructor(
                 subscriptions = d.subscriptions.filter { it.id != id },
                 configs = configs,
                 results = d.results.filter { r -> configs.any { it.id == r.configId } },
-            )
+                removed = d.removed - id,
+            ).withoutStaleDisabled()
         }
         control.withLock { restartLocked() }
+    }
+
+    /**
+     * Removes one server. A server that came from a subscription is remembered (by fingerprint) so a refresh does
+     * not bring it back; a hand-added one is simply deleted.
+     */
+    suspend fun removeConfig(id: String) {
+        _data.value = store.update { d ->
+            val c = d.configs.firstOrNull { it.id == id } ?: return@update d
+            val subId = c.subscriptionId
+            val removed = if (subId == null) d.removed else d.removed + (subId to ((d.removed[subId].orEmpty() + c.fingerprint).distinct()))
+            val configs = d.configs.filter { it.id != id }
+            d.copy(
+                configs = configs,
+                results = d.results.filter { it.configId != id },
+                removed = removed,
+                settings = if (d.settings.selectedConfigId == id) d.settings.copy(selectedConfigId = null) else d.settings,
+            ).withoutStaleDisabled()
+        }
+        control.withLock { restartLocked() }
+    }
+
+    /** Disabled servers stay in the list but are skipped by auto-select and tests. */
+    suspend fun setConfigDisabled(id: String, disabled: Boolean) {
+        _data.value = store.update { d ->
+            val fp = d.configs.firstOrNull { it.id == id }?.fingerprint ?: return@update d
+            d.copy(disabled = if (disabled) (d.disabled + fp).distinct() else d.disabled - fp)
+        }
+        control.withLock { restartLocked() }
+    }
+
+    /** Number of servers the user removed from subscription [subscriptionId]. */
+    fun removedCount(subscriptionId: String): Int = _data.value.removed[subscriptionId].orEmpty().size
+
+    /** Forgets the removed servers of a subscription and downloads it again so they come back. */
+    suspend fun restoreRemoved(subscriptionId: String): ParseResult {
+        _data.value = store.update { it.copy(removed = it.removed - subscriptionId) }
+        return refreshSubscription(subscriptionId)
+    }
+
+    /** Adds one share link (vless/vmess/trojan/ss/hy2) as a hand-added server. Never logs the link. */
+    suspend fun addConfigLink(link: String, name: String = ""): AddLinkResult {
+        val converted = try {
+            ShareLinks.convert(link)
+        } catch (e: RuntimeException) {
+            return AddLinkResult.INVALID
+        }
+        val config = ProxyConfig(
+            id = SubscriptionParser.configId(converted.outbound, emptyList()),
+            name = name.trim().ifEmpty { converted.name },
+            protocol = converted.protocol,
+            outbound = converted.outbound,
+            subscriptionId = null,
+        )
+        var duplicate = false
+        _data.value = store.update { d ->
+            if (d.configs.any { it.id == config.id || (it.isManual && it.fingerprint == config.fingerprint) }) {
+                duplicate = true
+                d
+            } else d.copy(configs = d.configs + config)
+        }
+        if (duplicate) return AddLinkResult.DUPLICATE
+        control.withLock { restartLocked() }
+        return AddLinkResult.ADDED
+    }
+
+    /** Removes every subscription and server, forgets removed/disabled marks and turns the connection off. */
+    suspend fun removeAll() {
+        _data.value = store.update { d ->
+            ProxyStoreData(settings = d.settings.copy(enabled = false, selectedConfigId = null))
+        }
+        routeChanged()
+        control.withLock { restartLocked() }
+    }
+
+    private fun ProxyStoreData.withoutStaleDisabled(): ProxyStoreData {
+        if (disabled.isEmpty()) return this
+        val live = configs.map { it.fingerprint }.toSet()
+        return copy(disabled = disabled.filter { it in live })
     }
 
     /**
@@ -184,9 +269,11 @@ class ProxyManager @Inject constructor(
             }
             return ParseResult(emptyList(), 0, listOf(reason))
         }
+        val gone = _data.value.removed[id].orEmpty().toSet()
+        val kept = if (gone.isEmpty()) result.configs else result.configs.filter { it.fingerprint !in gone }
         _data.value = store.update { d ->
             val others = d.configs.filter { it.subscriptionId != id }
-            val merged = (others + result.configs).distinctBy { it.id }
+            val merged = (others + kept).distinctBy { it.id }
             d.copy(
                 subscriptions = d.subscriptions.map {
                     if (it.id == id) it.copy(lastUpdatedAtMs = System.currentTimeMillis(), lastError = null) else it
@@ -196,13 +283,13 @@ class ProxyManager @Inject constructor(
             )
         }
         control.withLock { restartLocked() }
-        return result
+        return if (kept.size == result.configs.size) result else result.copy(configs = kept)
     }
 
     /** The user's "test all": every config, in batches of ≤20, one temporary instance at a time. */
     suspend fun testAll(): List<LatencyResult> {
         val d = _data.value
-        val all = TestPlanner.batches(d.configs, d.results, timing.maxConfigsPerRun).flatMap { runTests(it) }
+        val all = TestPlanner.batches(d.activeConfigs, d.results, timing.maxConfigsPerRun).flatMap { runTests(it) }
         return LatencyTester.sortResults(all)
     }
 
@@ -269,13 +356,14 @@ class ProxyManager @Inject constructor(
 
     private suspend fun connectOnce(fastPath: Boolean): Outcome {
         val d = _data.value
-        if (d.configs.isEmpty()) return Outcome.Down(FailReason.NO_CONFIGS)
+        val usable = d.activeConfigs
+        if (usable.isEmpty()) return Outcome.Down(FailReason.NO_CONFIGS)
 
         val candidates: List<ProxyConfig> = if (d.settings.autoSelect) {
             val recent = if (fastPath) recentWorking(d) else emptyList()
             recent.ifEmpty { findWorking() }
         } else {
-            val selected = d.configs.firstOrNull { it.id == d.settings.selectedConfigId }
+            val selected = usable.firstOrNull { it.id == d.settings.selectedConfigId }
                 ?: return Outcome.Down(FailReason.SELECTED_CONFIG_MISSING)
             if (runTests(listOf(selected)).firstOrNull()?.ok == true) listOf(selected) else emptyList()
         }
@@ -367,8 +455,8 @@ class ProxyManager @Inject constructor(
     /** Batches of ≤20 in priority order; stops at the first batch that has a working config. */
     private suspend fun findWorking(): List<ProxyConfig> {
         val d = _data.value
-        for (batch in TestPlanner.batches(d.configs, d.results, timing.maxConfigsPerRun)) {
-            val working = workingFrom(runTests(batch), d.configs)
+        for (batch in TestPlanner.batches(d.activeConfigs, d.results, timing.maxConfigsPerRun)) {
+            val working = workingFrom(runTests(batch), d.activeConfigs)
             if (working.isNotEmpty()) return working
         }
         return emptyList()
@@ -397,7 +485,7 @@ class ProxyManager @Inject constructor(
     private fun recentWorking(d: ProxyStoreData): List<ProxyConfig> {
         val now = System.currentTimeMillis()
         val fresh = d.results.filter { it.ok && now - it.testedAtMs in 0..timing.reuseResultsMaxAgeMs }
-        return workingFrom(fresh, d.configs)
+        return workingFrom(fresh, d.activeConfigs)
     }
 
     private fun workingFrom(results: List<LatencyResult>, configs: List<ProxyConfig>): List<ProxyConfig> {
@@ -438,3 +526,6 @@ class ProxyManager @Inject constructor(
         listeners.forEach { runCatching { it() } }
     }
 }
+
+/** Outcome of adding a single share link. */
+enum class AddLinkResult { ADDED, DUPLICATE, INVALID }

@@ -95,6 +95,10 @@ class SourcesViewModel @Inject constructor(private val repo: SourceRepository) :
     fun setEnabled(id: String, on: Boolean) = viewModelScope.launch { repo.setEnabled(id, on) }
     fun remove(id: String) = viewModelScope.launch { repo.remove(id); _tests.update { it - id } }
 
+    fun removeAllPresets() = viewModelScope.launch { repo.removeAllPresets(); _tests.update { it.filterKeys { k -> k !in presetIds } } }
+    fun restorePresets() = viewModelScope.launch { repo.restorePresets() }
+    private val presetIds = nl.rass.player.data.source.PresetSources.ALL.map { it.id }.toSet()
+
     fun move(id: String, delta: Int) = viewModelScope.launch {
         val list = repo.current()
         val i = list.indexOfFirst { it.id == id }

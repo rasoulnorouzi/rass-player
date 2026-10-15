@@ -50,6 +50,21 @@ class RepositoriesTest {
     private val repo = SourceRepository(store, cipher, FeedDiscovery(fetcher), FeedLoader(fetcher, cache), cache, now)
 
     @Test
+    fun `remove all presets keeps own sources and restore brings presets back`() = runBlocking<Unit> {
+        repo.seedPresets()
+        repo.add("Mine", "https://mine.example.invalid/feed.json")
+        assertEquals(PresetSources.ALL.size, repo.removeAllPresets())
+        assertEquals(listOf("Mine"), repo.current().map { it.name })
+        assertEquals(PresetSources.ALL.size, repo.restorePresets())
+        assertEquals(PresetSources.ALL.size + 1, repo.current().size)
+        assertTrue(repo.current().filter { it.isPreset }.all { it.enabled })
+        assertEquals(0, repo.restorePresets(), "nothing missing the second time")
+        // A single removed preset comes back alone.
+        repo.remove(repo.current().first { it.isPreset }.id)
+        assertEquals(1, repo.restorePresets())
+    }
+
+    @Test
     fun `presets are seeded once and a disabled or removed preset stays that way`() = runBlocking<Unit> {
         repo.seedPresets()
         val presets = repo.current()

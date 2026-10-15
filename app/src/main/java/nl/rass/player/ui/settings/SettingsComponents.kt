@@ -125,16 +125,51 @@ fun SettingRow(
 }
 
 @Composable
-fun SwitchVisual(checked: Boolean) {
+fun SwitchVisual(checked: Boolean, showLabel: Boolean = false) {
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        if (showLabel) Text(
+            stringResource(if (checked) R.string.set_state_on else R.string.set_state_off),
+            style = MaterialTheme.typography.labelMedium,
+            color = if (checked) TextPrimary else TextMuted,
+        )
+        Box(
+            Modifier.size(width = 60.dp, height = 32.dp).clip(CircleShape)
+                .background(if (checked) Accent else Color(0xFF2B2F38))
+                .border(if (checked) 0.dp else 1.dp, Color(0x55FFFFFF), CircleShape)
+                .padding(4.dp),
+            contentAlignment = if (checked) Alignment.CenterEnd else Alignment.CenterStart,
+        ) { Box(Modifier.size(24.dp).clip(CircleShape).background(if (checked) Color.White else Color(0xFF8B909B))) }
+    }
+}
+
+/** Bar of primary action pills shown above a list; the first button should get initial focus (it is first in focus order). */
+@Composable
+fun ActionBar(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
+    Row(
+        modifier.fillMaxWidth().clip(RowShape).background(Surface).padding(12.dp),
+        horizontalArrangement = Arrangement.spacedBy(14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) { content() }
+}
+
+/** Focusable trash icon for the end of a row. */
+@Composable
+fun DeleteButton(onClick: () -> Unit) {
+    val shape = CircleShape
     Box(
-        Modifier.size(width = 60.dp, height = 32.dp).clip(CircleShape).background(if (checked) Accent else Color(0xFF3A3E47)).padding(4.dp),
-        contentAlignment = if (checked) Alignment.CenterEnd else Alignment.CenterStart,
-    ) { Box(Modifier.size(24.dp).clip(CircleShape).background(Color.White)) }
+        Modifier.size(44.dp).tvFocusable(shape = shape, onClick = onClick).clip(shape).background(Color(0xFF3A1D1D)),
+        contentAlignment = Alignment.Center,
+    ) {
+        androidx.tv.material3.Icon(
+            androidx.compose.ui.res.painterResource(R.drawable.ic_delete), stringResource(R.string.set_delete),
+            Modifier.size(24.dp), tint = Color(0xFFFF8A80),
+        )
+    }
 }
 
 @Composable
 fun SwitchRow(title: String, checked: Boolean, onChange: (Boolean) -> Unit, subtitle: String? = null, enabled: Boolean = true) {
-    SettingRow(title, onClick = { onChange(!checked) }, subtitle = subtitle, enabled = enabled, trailing = { SwitchVisual(checked) })
+    SettingRow(title, onClick = { onChange(!checked) }, subtitle = subtitle, enabled = enabled, trailing = { SwitchVisual(checked, showLabel = true) })
 }
 
 @Composable
@@ -180,6 +215,7 @@ fun SettingsDialog(onDismiss: () -> Unit, title: String? = null, width: androidx
                 .clip(RoundedCornerShape(16.dp))
                 .background(Surface)
                 .border(1.dp, Color(0x33FFFFFF), RoundedCornerShape(16.dp))
+                .heightIn(max = 760.dp)
                 .padding(28.dp)
                 .focusRequester(fr)
                 .focusGroup(),

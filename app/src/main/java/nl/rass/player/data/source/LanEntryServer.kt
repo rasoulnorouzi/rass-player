@@ -6,7 +6,7 @@ import java.net.NetworkInterface
 import java.security.SecureRandom
 
 /** What the phone page collects. */
-enum class LanMode { SOURCE, SUBSCRIPTION, TEXT }
+enum class LanMode { SOURCE, SUBSCRIPTION, TEXT, CONFIG }
 
 /** Outcome of checking one request to the phone page (pure, see [LanEntryServer.evaluate]). */
 sealed interface PhoneRequest {
@@ -64,6 +64,7 @@ class LanEntryServer(
     private fun texts() = when (mode) {
         LanMode.SOURCE -> Texts("افزودن منبع به Rass_player", "نشانی سایت یا فید خود را وارد کنید.", "نشانی سایت یا فید", "منبع به تلویزیون اضافه شد. می‌توانید این صفحه را ببندید.")
         LanMode.SUBSCRIPTION -> Texts("افزودن اتصال خصوصی", "پیوند اشتراک (subscription) را جای‌گذاری کنید.", "پیوند اشتراک", "پیوند به تلویزیون اضافه شد. می‌توانید این صفحه را ببندید.")
+        LanMode.CONFIG -> Texts("افزودن سرور", "لینک سرور (vless، vmess، trojan، ss یا hy2) را جای‌گذاری کنید.", "لینک سرور", "سرور به تلویزیون اضافه شد. می‌توانید این صفحه را ببندید.")
         LanMode.TEXT -> Texts("تایپ با گوشی", "متن جستجو را بنویسید.", "متن جستجو", "متن به تلویزیون فرستاده شد. می‌توانید این صفحه را ببندید.")
     }
 
@@ -75,6 +76,7 @@ class LanEntryServer(
 
     private fun field(): String = when (mode) {
         LanMode.TEXT -> """<input name="value" dir="auto" autofocus>"""
+        LanMode.CONFIG -> """<input name="value" dir="ltr" placeholder="vless://" autofocus>"""
         LanMode.SUBSCRIPTION -> """<input name="value" type="url" dir="ltr" placeholder="https://" autofocus>"""
         LanMode.SOURCE -> """<input name="value" type="url" dir="ltr" placeholder="https://mysite.nl" autofocus>"""
     }
@@ -95,6 +97,7 @@ class LanEntryServer(
 
     companion object {
         const val MAX_TEXT = 200
+        const val MAX_LINK = 8_000
         private const val MAX_NAME = 80
         private val whitespace = Regex("\\s+")
         private val rnd = SecureRandom()
@@ -116,6 +119,10 @@ class LanEntryServer(
                 LanMode.SUBSCRIPTION ->
                     if (!value.startsWith("http://", true) && !value.startsWith("https://", true)) {
                         PhoneRequest.Invalid("پیوند باید با http:// یا https:// شروع شود.")
+                    } else PhoneRequest.Submit(name, value)
+                LanMode.CONFIG ->
+                    if (value.length > MAX_LINK || !nl.rass.player.net.ShareLinks.isShareLink(value)) {
+                        PhoneRequest.Invalid("لینک باید با vless://، vmess://، trojan://، ss:// یا hy2:// شروع شود.")
                     } else PhoneRequest.Submit(name, value)
                 LanMode.SOURCE -> PhoneRequest.Submit(name, value)
             }

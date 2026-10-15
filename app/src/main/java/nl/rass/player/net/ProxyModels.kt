@@ -23,7 +23,13 @@ data class ProxyConfig(
     val outbound: JsonObject,
     val helpers: List<JsonObject> = emptyList(),
     val subscriptionId: String? = null,
-)
+) {
+    /** Stable identity of the server itself (protocol+host+port+id/password), see [ConfigFingerprint]. */
+    val fingerprint: String get() = ConfigFingerprint.of(this)
+
+    /** A single link the user added by hand (not part of any subscription). */
+    val isManual: Boolean get() = subscriptionId == null
+}
 
 /** A subscription link the user pasted. SECRET: [url] usually embeds an access token. */
 @Serializable
@@ -67,7 +73,22 @@ data class ProxyStoreData(
     val subscriptions: List<Subscription> = emptyList(),
     val configs: List<ProxyConfig> = emptyList(),
     val results: List<LatencyResult> = emptyList(),
-)
+    /**
+     * Servers the user removed from a subscription, per subscription id, as [ConfigFingerprint] hashes (never raw
+     * secrets). A refresh drops them again until the user restores them.
+     */
+    val removed: Map<String, List<String>> = emptyMap(),
+    /** [ConfigFingerprint]s of servers the user disabled: kept in the list, skipped by auto-select and tests. */
+    val disabled: List<String> = emptyList(),
+) {
+    /** Configs that take part in auto-select, tests and connecting. */
+    val activeConfigs: List<ProxyConfig> get() = if (disabled.isEmpty()) configs else {
+        val off = disabled.toSet()
+        configs.filter { it.fingerprint !in off }
+    }
+
+    fun isDisabled(c: ProxyConfig): Boolean = disabled.isNotEmpty() && c.fingerprint in disabled
+}
 
 /**
  * Where the running Xray instance listens. Loopback only. [httpPort]/[socksPort] carry app traffic through the

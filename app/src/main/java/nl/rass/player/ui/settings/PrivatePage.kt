@@ -25,6 +25,7 @@ import kotlinx.coroutines.runBlocking
 import nl.rass.player.data.source.LanEntryServer
 import nl.rass.player.data.source.LanMode
 import nl.rass.player.R
+import nl.rass.player.net.AddLinkResult
 import nl.rass.player.net.CheckOutcome
 import nl.rass.player.net.ConnectStep
 import nl.rass.player.net.ConnectionChecker
@@ -35,6 +36,8 @@ import nl.rass.player.net.ProxyState
 import nl.rass.player.net.ProxyStoreData
 import nl.rass.player.ui.components.PillButton
 import nl.rass.player.ui.components.PillStyle
+import nl.rass.player.ui.components.SectionHeader
+import androidx.compose.foundation.layout.padding
 import nl.rass.player.ui.format.fa
 import nl.rass.player.ui.format.formatLatencyFa
 
@@ -58,15 +61,30 @@ class PrivateConnectionViewModel @Inject constructor(
     fun select(id: String) { viewModelScope.launch { proxy.selectConfig(id) } }
     fun setConcurrency(n: Int) { viewModelScope.launch { proxy.setTestConcurrency(n) } }
     fun remove(id: String) { viewModelScope.launch { proxy.removeSubscription(id) } }
+    fun removeConfig(id: String) { viewModelScope.launch { proxy.removeConfig(id) } }
+    fun setConfigDisabled(id: String, disabled: Boolean) { viewModelScope.launch { proxy.setConfigDisabled(id, disabled) } }
+    fun removeAll() { viewModelScope.launch { proxy.removeAll() } }
+    fun restoreRemoved(subId: String) = run { _ -> proxy.restoreRemoved(subId); "restored" }
+    fun addLink(link: String, name: String) = run { _ ->
+        when (proxy.addConfigLink(link, name)) {
+            AddLinkResult.ADDED -> "linkok"
+            AddLinkResult.DUPLICATE -> "linkdup"
+            AddLinkResult.INVALID -> "linkbad"
+        }
+    }
 
     // ---- R1.7: subscription link typed on the phone. The link goes straight into the encrypted store; never logged. ----
     private val _lan = MutableStateFlow<LanUi>(LanUi.Off)
     val lan: StateFlow<LanUi> = _lan.asStateFlow()
     private var server: LanEntryServer? = null
 
-    fun startLan() {
+    fun startLan(configMode: Boolean = false) {
         stopLan()
-        val s = LanEntryServer(LanMode.SUBSCRIPTION) { name, link -> addFromPhone(name, link) }
+        val s = if (configMode) {
+            LanEntryServer(LanMode.CONFIG) { name, link -> addLinkFromPhone(name, link) }
+        } else {
+            LanEntryServer(LanMode.SUBSCRIPTION) { name, link -> addFromPhone(name, link) }
+        }
         val url = runCatching { s.startAndGetUrl() }.getOrNull()
         if (url == null) { _lan.value = LanUi.NoNetwork; return }
         server = s
@@ -78,6 +96,20 @@ class PrivateConnectionViewModel @Inject constructor(
             val res = proxy.addSubscription(link, name)
             if (res.configs.isEmpty()) "در این پیوند پیکربندی قابل استفاده‌ای پیدا نشد."
             else { _lan.value = LanUi.Added(name.ifBlank { "اتصال خصوصی" }); null }
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            "افزودن ناموفق بود."
+        }
+    }
+
+    private fun addLinkFromPhone(name: String, link: String): String? = runBlocking(Dispatchers.IO) {
+        try {
+            when (proxy.addConfigLink(link, name)) {
+                AddLinkResult.ADDED -> { _lan.value = LanUi.Added(name.ifBlank { "سرور" }); null }
+                AddLinkResult.DUPLICATE -> "این سرور قبلاً اضافه شده است."
+                AddLinkResult.INVALID -> "این لینک پشتیبانی نمی‌شود."
+            }
         } catch (e: kotlinx.coroutines.CancellationException) {
             throw e
         } catch (e: Exception) {
@@ -155,6 +187,12 @@ fun PrivateConnectionPage(onBack: () -> Unit, vm: PrivateConnectionViewModel = h
     val s = data.settings
     var addDialog by remember { mutableStateOf(false) }
     var removing by remember { mutableStateOf<String?>(null) }
+    var subActions by remember { mutableStateOf<String?>(null) }
+    var configActions by remember { mutableStateOf<String?>(null) }
+    var removingConfig by remember { mutableStateOf<String?>(null) }
+    var addLinkDialog by remember { mutableStateOf(false) }
+    var lanConfig by remember { mutableStateOf(false) }
+    var removeAllDialog by remember { mutableStateOf(false) }
     val results = data.results.associateBy { it.configId }
     val working = busy || testing
 
@@ -179,6 +217,14 @@ fun PrivateConnectionPage(onBack: () -> Unit, vm: PrivateConnectionViewModel = h
     }
 
     SettingsPage(stringResource(R.string.set_sec_private), onBack, subtitle = stateText) {
+        item {
+            ActionBar {
+                PillButton(stringResource(R.string.set_pc_add_sub), { addDialog = true }, iconRes = R.drawable.ic_add, style = PillStyle.Accent)
+                PillButton(stringResource(R.string.set_pc_add_link), { addLinkDialog = true }, iconRes = R.drawable.ic_add)
+                PillButton(stringResource(R.string.set_pc_add_phone), { lanConfig = false; vm.startLan() }, iconRes = R.drawable.ic_phone)
+                PillButton(stringResource(R.string.set_pc_check), { vm.runCheck() }, iconRes = R.drawable.ic_check)
+            }
+        }
         item { SwitchRow(stringResource(R.string.set_pc_enable), s.enabled, { vm.setEnabled(it) }, subtitle = stringResource(R.string.set_pc_enable_hint)) }
         item { SwitchRow(stringResource(R.string.set_pc_kill), s.killSwitch, { vm.setKillSwitch(it) }, subtitle = stringResource(R.string.set_pc_kill_hint)) }
         item { SwitchRow(stringResource(R.string.set_pc_auto), s.autoSelect, { vm.setAuto(it) }, subtitle = stringResource(R.string.set_pc_auto_hint)) }
@@ -197,7 +243,6 @@ fun PrivateConnectionPage(onBack: () -> Unit, vm: PrivateConnectionViewModel = h
         }
         item {
             Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-                PillButton(stringResource(R.string.set_pc_check), { vm.runCheck() })
                 if (check.app is CheckOutcome.Ok) PillButton(stringResource(R.string.set_pc_check_direct), { vm.compareDirect() })
             }
         }
@@ -209,47 +254,98 @@ fun PrivateConnectionPage(onBack: () -> Unit, vm: PrivateConnectionViewModel = h
                     message == "no" -> stringResource(R.string.set_pc_add_none)
                     message == "tested" -> stringResource(R.string.set_pc_tested)
                     message == "fail" -> stringResource(R.string.set_pc_add_fail)
+                    message == "linkok" -> stringResource(R.string.set_pc_link_ok)
+                    message == "linkdup" -> stringResource(R.string.set_pc_link_dup)
+                    message == "linkbad" -> stringResource(R.string.set_pc_link_bad)
+                    message == "restored" -> stringResource(R.string.set_pc_restored)
                     message?.startsWith("ok:") == true -> message!!.split(":").let {
                         stringResource(R.string.set_pc_add_ok, (it.getOrNull(1)?.toIntOrNull() ?: 0).fa(), (it.getOrNull(2)?.toIntOrNull() ?: 0).fa())
                     }
                     else -> ""
                 },
-                error = message == "no" || message == "fail",
+                error = message == "no" || message == "fail" || message == "linkbad" || message == "linkdup",
             )
         }
 
-        item { SettingRow(stringResource(R.string.set_pc_add_sub), { addDialog = true }, subtitle = stringResource(R.string.set_pc_add_sub_hint)) }
-        item { SettingRow(stringResource(R.string.set_pc_add_phone), { vm.startLan() }, subtitle = stringResource(R.string.set_pc_add_phone_hint)) }
+        item { SettingRow(stringResource(R.string.set_pc_add_link_phone), { lanConfig = true; vm.startLan(configMode = true) }, subtitle = stringResource(R.string.set_pc_add_link_phone_hint)) }
+        if (data.subscriptions.isNotEmpty() || data.configs.isNotEmpty()) item {
+            SettingRow(stringResource(R.string.set_pc_remove_all), { removeAllDialog = true }, subtitle = stringResource(R.string.set_pc_remove_all_hint))
+        }
+        item { SectionHeader(stringResource(R.string.set_pc_list_header), androidx.compose.ui.Modifier.padding(top = 12.dp, start = 8.dp)) }
         items(data.subscriptions, key = { it.id }) { sub ->
             val n = data.configs.count { it.subscriptionId == sub.id }
             SettingRow(
                 sub.name.ifBlank { stringResource(R.string.set_pc_sub_unnamed) },
-                onClick = { removing = sub.id },
-                subtitle = if (sub.lastError != null) stringResource(R.string.set_pc_sub_error) else stringResource(R.string.set_pc_sub_count, n.fa()),
-                value = stringResource(R.string.set_pc_sub_remove_hint),
+                onClick = { subActions = sub.id },
+                subtitle = (if (sub.lastError != null) stringResource(R.string.set_pc_sub_error) else stringResource(R.string.set_pc_sub_count, n.fa())) +
+                    (data.removed[sub.id].orEmpty().size.takeIf { it > 0 }?.let { " • " + stringResource(R.string.set_pc_sub_removed_count, it.fa()) } ?: ""),
+                value = stringResource(R.string.set_pc_sub_manage_hint),
+                trailing = { DeleteButton { removing = sub.id } },
             )
         }
 
         item { StatusText(stringResource(R.string.set_pc_configs, data.configs.size.fa()), modifier = androidx.compose.ui.Modifier) }
-        items(data.configs, key = { it.id }) { c ->
-            val r = results[c.id]
-            val selected = !s.autoSelect && s.selectedConfigId == c.id
-            val active = (state as? ProxyState.Connected)?.configName == c.name
-            SettingRow(
-                c.name.ifBlank { c.protocol },
-                onClick = { vm.select(c.id) },
-                subtitle = c.protocol.uppercase() + if (active) " • " + stringResource(R.string.set_pc_active) else "",
-                value = when {
-                    r == null -> stringResource(R.string.set_pc_untested)
-                    r.latencyMs != null -> formatLatencyFa(r.latencyMs)
-                    else -> stringResource(R.string.set_pc_failed)
-                },
-                trailing = { if (selected) CheckVisual(true) },
-            )
-        }
+        val manual = data.configs.filter { it.isManual }
+        val fromSubs = data.configs.filter { !it.isManual }
+        if (manual.isNotEmpty()) item { StatusText(stringResource(R.string.set_pc_manual_group, manual.size.fa()), modifier = androidx.compose.ui.Modifier) }
+        items(manual, key = { it.id }) { c -> ConfigRow(c, data, results[c.id], state, s, { configActions = c.id }, { removingConfig = c.id }) }
+        if (manual.isNotEmpty() && fromSubs.isNotEmpty()) item { StatusText(stringResource(R.string.set_pc_sub_group, fromSubs.size.fa()), modifier = androidx.compose.ui.Modifier) }
+        items(fromSubs, key = { it.id }) { c -> ConfigRow(c, data, results[c.id], state, s, { configActions = c.id }, { removingConfig = c.id }) }
     }
 
-    if (lan != LanUi.Off) LanDialog(lan, onClose = { vm.stopLan() }, title = stringResource(R.string.set_pc_add_phone))
+    if (lan != LanUi.Off) LanDialog(
+        lan, onClose = { vm.stopLan() },
+        title = stringResource(if (lanConfig) R.string.set_pc_add_link_phone else R.string.set_pc_add_phone),
+    )
+    if (addLinkDialog) AddLinkDialog(
+        onAdd = { l, n -> vm.addLink(l, n); addLinkDialog = false }, onDismiss = { addLinkDialog = false },
+    )
+    subActions?.let { id ->
+        val sub = data.subscriptions.firstOrNull { it.id == id }
+        if (sub == null) subActions = null else {
+            val removedN = data.removed[id].orEmpty().size
+            SettingsDialog({ subActions = null }, sub.name.ifBlank { stringResource(R.string.set_pc_sub_unnamed) }) {
+                androidx.compose.foundation.layout.Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    if (removedN > 0) SettingRow(
+                        stringResource(R.string.set_pc_restore_removed), { vm.restoreRemoved(id); subActions = null },
+                        subtitle = stringResource(R.string.set_pc_restore_removed_hint, removedN.fa()),
+                    )
+                    SettingRow(stringResource(R.string.set_pc_sub_remove_title), { removing = id; subActions = null })
+                }
+            }
+        }
+    }
+    configActions?.let { id ->
+        val c = data.configs.firstOrNull { it.id == id }
+        if (c == null) configActions = null else {
+            val off = data.isDisabled(c)
+            SettingsDialog({ configActions = null }, c.name.ifBlank { c.protocol }) {
+                androidx.compose.foundation.layout.Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    SettingRow(stringResource(R.string.set_pc_use_server), { vm.select(id); configActions = null }, subtitle = stringResource(R.string.set_pc_use_server_hint))
+                    SettingRow(
+                        stringResource(if (off) R.string.set_pc_enable_server else R.string.set_pc_disable_server),
+                        { vm.setConfigDisabled(id, !off); configActions = null },
+                        subtitle = stringResource(if (off) R.string.set_pc_enable_server_hint else R.string.set_pc_disable_server_hint),
+                    )
+                    SettingRow(stringResource(R.string.set_pc_remove_server), { removingConfig = id; configActions = null })
+                }
+            }
+        }
+    }
+    removingConfig?.let { id ->
+        val c = data.configs.firstOrNull { it.id == id }
+        ConfirmDialog(
+            stringResource(R.string.set_pc_remove_server_title, c?.name.orEmpty().ifBlank { c?.protocol.orEmpty() }),
+            stringResource(if (c?.isManual == false) R.string.set_pc_remove_server_msg_sub else R.string.set_pc_remove_server_msg),
+            stringResource(R.string.set_delete), stringResource(R.string.set_cancel),
+            onConfirm = { vm.removeConfig(id); removingConfig = null }, onDismiss = { removingConfig = null },
+        )
+    }
+    if (removeAllDialog) ConfirmDialog(
+        stringResource(R.string.set_pc_remove_all_title), stringResource(R.string.set_pc_remove_all_msg),
+        stringResource(R.string.set_pc_remove_all), stringResource(R.string.set_cancel),
+        onConfirm = { vm.removeAll(); removeAllDialog = false }, onDismiss = { removeAllDialog = false },
+    )
     if (addDialog) AddSubscriptionDialog(
         onAdd = { u, n -> vm.add(u, n); addDialog = false }, onDismiss = { addDialog = false },
     )
@@ -259,6 +355,47 @@ fun PrivateConnectionPage(onBack: () -> Unit, vm: PrivateConnectionViewModel = h
             stringResource(R.string.set_delete), stringResource(R.string.set_cancel),
             onConfirm = { vm.remove(id); removing = null }, onDismiss = { removing = null },
         )
+    }
+}
+
+@Composable
+private fun ConfigRow(
+    c: nl.rass.player.net.ProxyConfig,
+    data: ProxyStoreData,
+    r: nl.rass.player.net.LatencyResult?,
+    state: ProxyState,
+    s: nl.rass.player.net.ProxySettings,
+    onClick: () -> Unit,
+    onDelete: () -> Unit,
+) {
+    val off = data.isDisabled(c)
+    val selected = !s.autoSelect && s.selectedConfigId == c.id
+    val active = (state as? ProxyState.Connected)?.configName == c.name
+    SettingRow(
+        c.name.ifBlank { c.protocol },
+        onClick = onClick,
+        subtitle = c.protocol.uppercase() + if (active) " • " + stringResource(R.string.set_pc_active) else "",
+        value = when {
+            off -> stringResource(R.string.set_pc_disabled)
+            r == null -> stringResource(R.string.set_pc_untested)
+            r.latencyMs != null -> formatLatencyFa(r.latencyMs)
+            else -> stringResource(R.string.set_pc_failed)
+        },
+        trailing = { if (selected) CheckVisual(true); DeleteButton(onDelete) },
+    )
+}
+
+@Composable
+private fun AddLinkDialog(onAdd: (String, String) -> Unit, onDismiss: () -> Unit) {
+    var link by remember { mutableStateOf("") }
+    var name by remember { mutableStateOf("") }
+    SettingsDialog(onDismiss, stringResource(R.string.set_pc_add_link)) {
+        TvTextField(link, { link = it }, stringResource(R.string.set_pc_link_field), ltr = true, phoneHint = true)
+        TvTextField(name, { name = it }, stringResource(R.string.set_pc_sub_name))
+        Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+            PillButton(stringResource(R.string.set_save), { if (link.isNotBlank()) onAdd(link.trim(), name.trim()) }, style = PillStyle.Accent)
+            PillButton(stringResource(R.string.set_cancel), onDismiss)
+        }
     }
 }
 

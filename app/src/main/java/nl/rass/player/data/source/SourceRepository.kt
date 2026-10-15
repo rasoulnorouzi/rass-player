@@ -104,6 +104,30 @@ class SourceRepository(
         cache?.clear(id)
     }
 
+    /** Removes every preset test source (R12) and clears their caches. Own sources are untouched. */
+    suspend fun removeAllPresets(): Int = mutex.withLock {
+        val gone = current().filter { it.isPreset }
+        if (gone.isNotEmpty()) store.update { f -> f.copy(sources = f.sources.filterNot { it.isPreset }) }
+        gone.forEach { cache?.clear(it.id) }
+        gone.size
+    }
+
+    /** Brings back the preset test sources that are missing (enabled, at the end). Returns how many came back. */
+    suspend fun restorePresets(): Int = mutex.withLock {
+        var count = 0
+        store.update { f ->
+            val missing = PresetSources.ALL.filter { p -> f.sources.none { it.url == p.url } }
+            count = missing.size
+            if (missing.isEmpty()) return@update f
+            var order = (f.sources.maxOfOrNull { it.order } ?: -1) + 1
+            val added = missing.map { p ->
+                SourceRecord(id = p.id, name = p.name, url = p.url, order = order++, isPreset = true, addedAt = now())
+            }
+            f.copy(sources = f.sources + added, seededPresets = (f.seededPresets + missing.map { it.url }).distinct())
+        }
+        count
+    }
+
     /** Moves source [id] to position [toIndex] in Settings order. */
     suspend fun move(id: String, toIndex: Int) = mutex.withLock {
         store.update { f ->
