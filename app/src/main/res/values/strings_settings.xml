@@ -160,6 +160,9 @@
     <string name="set_pc_add_none">کانفیگ قابل‌استفاده‌ای دریافت نشد. پیوند را بررسی کنید.</string>
     <string name="set_pc_add_fail">انجام نشد. اتصال اینترنت را بررسی کنید.</string>
     <string name="set_pc_add_sub">افزودن پیوند اشتراک</string>
+    <string name="set_pc_add_phone">افزودن از گوشی</string>
+    <string name="set_pc_add_phone_hint">QR را با گوشی اسکن کنید و پیوند اشتراک را آنجا جای‌گذاری کنید</string>
+    <string name="phone_typing_hint">می‌توانید با برنامهٔ Google TV روی گوشی تایپ یا جای‌گذاری کنید</string>
     <string name="set_pc_add_sub_hint">پیوند اشتراک Xray یا فهرست vless/vmess/trojan/ss</string>
     <string name="set_pc_sub_url">پیوند اشتراک</string>
     <string name="set_pc_sub_name">نام (اختیاری)</string>

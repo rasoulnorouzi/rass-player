@@ -57,6 +57,8 @@ fun OnScreenKeyboard(
     onKey: (KbKey) -> Unit,
     modifier: Modifier = Modifier,
     firstKeyFocus: FocusRequester? = null,
+    /** Up from the first row: return true when focus moved elsewhere (the predictor row) instead of wrapping. */
+    onUpFromTop: () -> Boolean = { false },
 ) {
     val rows = remember(language, micAvailable) { KeyboardLayouts.rows(language, micAvailable) }
     val requesters = remember(rows) { rows.map { r -> r.map { FocusRequester() } } }
@@ -73,7 +75,7 @@ fun OnScreenKeyboard(
             return if (a <= 1) 0 else Math.round(c * (b - 1).toFloat() / (a - 1)).coerceIn(0, b - 1)
         }
         when (d) {
-            Dir.Up -> { val nr = (r - 1 + n) % n; requesters[nr][mapCol(nr)].requestFocus() }
+            Dir.Up -> { if (r == 0 && onUpFromTop()) return true; val nr = (r - 1 + n) % n; requesters[nr][mapCol(nr)].requestFocus() }
             Dir.Down -> { val nr = (r + 1) % n; requesters[nr][mapCol(nr)].requestFocus() }
             else -> {
                 val size = rows[r].size

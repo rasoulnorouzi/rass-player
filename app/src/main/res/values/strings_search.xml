@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="search_type_with_phone">تایپ با گوشی</string>
     <string name="search_hint">جستجوی فیلم و سریال…</string>
     <string name="search_field_label">عبارت جستجو</string>
     <string name="search_recent">جستجوهای اخیر</string>

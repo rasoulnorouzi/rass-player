@@ -12,7 +12,10 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.distinctUntilChangedBy
 import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
@@ -21,7 +24,11 @@ import nl.rass.player.data.catalog.CatalogRepository
 import nl.rass.player.data.local.RecentSearchRepository
 import nl.rass.player.domain.TitleType
 import nl.rass.player.search.PersianTextNormalizer
+import nl.rass.player.data.source.LanEntryServer
+import nl.rass.player.data.source.LanMode
 import nl.rass.player.ui.search.keyboard.KbKey
+import nl.rass.player.ui.search.keyboard.KeyboardPredictor
+import nl.rass.player.ui.settings.LanUi
 import nl.rass.player.ui.search.keyboard.KeyboardEdit
 import nl.rass.player.ui.search.keyboard.KeyboardLanguage
 
@@ -48,6 +55,8 @@ data class SearchUiState(
     val results: List<SearchItem> = emptyList(),
     val recents: List<String> = emptyList(),
     val catalogLoading: Boolean = false,
+    /** Words for the keyboard predictor (catalog titles + genres), most frequent first. */
+    val vocab: List<String> = emptyList(),
 ) {
     val hasQuery: Boolean get() = PersianTextNormalizer.Default.compact(query).isNotEmpty()
 }
@@ -75,6 +84,18 @@ class SearchViewModel @Inject constructor(
         .flowOn(Dispatchers.Default)
         .stateIn(viewModelScope, SharingStarted.Eagerly, Output(emptyList(), emptyList()))
 
+    private val vocab: StateFlow<List<String>> = catalog.state
+        .map { it.catalog }
+        .distinctUntilChangedBy { it.titles.size }
+        .mapLatest { c ->
+            KeyboardPredictor.vocabulary(
+                c.titles.flatMap { listOfNotNull(it.meta.titleFa, it.meta.titleEn) } +
+                    c.genres.flatMap { listOfNotNull(it.nameFa, it.nameEn) },
+            )
+        }
+        .flowOn(Dispatchers.Default)
+        .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+
     val state: StateFlow<SearchUiState> = combine(
         query, language, sourceFilter, typeFilter,
     ) { q, l, s, t -> SearchUiState(query = q, language = l, sourceFilter = s, typeFilter = t) }
@@ -86,6 +107,7 @@ class SearchViewModel @Inject constructor(
             )
         }
         .combine(recentRepo.recent) { base, r -> base.copy(recents = r) }
+        .combine(vocab) { base, v -> base.copy(vocab = v) }
         .stateIn(viewModelScope, SharingStarted.Eagerly, SearchUiState())
 
     private fun run(i: Input): Output {
@@ -136,6 +158,32 @@ class SearchViewModel @Inject constructor(
     private fun remember(text: String) {
         viewModelScope.launch { recentRepo.add(text) }
     }
+
+    // ---- R1.7: search text typed on the phone (one-time code, LAN only) ----
+    private val _lan = MutableStateFlow<LanUi>(LanUi.Off)
+    val lan: StateFlow<LanUi> = _lan.asStateFlow()
+    private var server: LanEntryServer? = null
+
+    fun startLan() {
+        stopLan()
+        val s = LanEntryServer(LanMode.TEXT) { _, text ->
+            submit(text)
+            _lan.value = LanUi.Off
+            null
+        }
+        val url = runCatching { s.startAndGetUrl() }.getOrNull()
+        if (url == null) { _lan.value = LanUi.NoNetwork; return }
+        server = s
+        _lan.value = LanUi.Waiting(url)
+    }
+
+    fun stopLan() {
+        server?.let { s -> viewModelScope.launch(Dispatchers.IO) { s.stop() } }
+        server = null
+        _lan.value = LanUi.Off
+    }
+
+    override fun onCleared() { server?.stop(); server = null }
 
     fun clearRecents() { viewModelScope.launch { recentRepo.clear() } }
     fun setSource(id: String?) { sourceFilter.value = id }

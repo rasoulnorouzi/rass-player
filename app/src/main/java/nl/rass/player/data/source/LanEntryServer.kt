@@ -5,17 +5,30 @@ import java.net.Inet4Address
 import java.net.NetworkInterface
 import java.security.SecureRandom
 
+/** What the phone page collects. */
+enum class LanMode { SOURCE, SUBSCRIPTION, TEXT }
+
+/** Outcome of checking one request to the phone page (pure, see [LanEntryServer.evaluate]). */
+sealed interface PhoneRequest {
+    data object Forbidden : PhoneRequest
+    data object ShowForm : PhoneRequest
+    data class Invalid(val messageFa: String) : PhoneRequest
+    data class Submit(val name: String, val value: String) : PhoneRequest
+}
+
 /**
- * R1.7: a tiny page on the LAN where the user types a site/feed address on the phone. The TV shows a QR code of
- * [pageUrl]. Random port, a one-time code in the URL, only the address and an optional name travel over the
- * LAN (never tokens). The code stops working after the first accepted submit or [stop].
+ * R1.7: a tiny page on the LAN where the user types on the phone: a site/feed address ([LanMode.SOURCE]), an Xray
+ * subscription link ([LanMode.SUBSCRIPTION]) or search text ([LanMode.TEXT]). The TV shows a QR code of the URL.
+ * Random port, a one-time code in the URL, LAN only. Values are handed to [onSubmit] and never logged.
+ * The code stops working after the first accepted submit or [stop].
  *
- * [onSubmit] gets (name, address) and returns null on success or a Persian error to show on the phone. It is
+ * [onSubmit] gets (name, value) and returns null on success or a Persian error to show on the phone. It is
  * called on the server thread and may block.
  */
 class LanEntryServer(
+    private val mode: LanMode = LanMode.SOURCE,
     private val hostProvider: () -> String? = ::localIpv4,
-    private val onSubmit: (name: String, address: String) -> String?,
+    private val onSubmit: (name: String, value: String) -> String?,
 ) : NanoHTTPD(0) {
 
     @Volatile var code: String = newCode(); private set
@@ -29,24 +42,29 @@ class LanEntryServer(
     }
 
     override fun serve(session: IHTTPSession): Response {
-        val params = session.parameters
-        if (session.method == Method.POST) {
-            runCatching { session.parseBody(HashMap()) }
+        val post = session.method == Method.POST
+        if (post) runCatching { session.parseBody(HashMap()) }
+        val t = texts()
+        return when (val r = evaluate(mode, code, used, post, session.parameters)) {
+            PhoneRequest.Forbidden -> html(Response.Status.FORBIDDEN, page("پیوند منقضی شده است", "این صفحه یک‌بار مصرف است. در تلویزیون دوباره QR بسازید.", form = false))
+            PhoneRequest.ShowForm -> html(Response.Status.OK, page(t.title, t.prompt, form = true))
+            is PhoneRequest.Invalid -> html(Response.Status.OK, page(t.title, r.messageFa, form = true))
+            is PhoneRequest.Submit -> {
+                val err = onSubmit(r.name, r.value)
+                if (err == null) {
+                    used = true
+                    html(Response.Status.OK, page("انجام شد", t.done, form = false))
+                } else html(Response.Status.OK, page("ناموفق", err, form = true))
+            }
         }
-        val c = (session.parameters["c"] ?: params["c"])?.firstOrNull()
-        if (used || c != code) return html(Response.Status.FORBIDDEN, page("پیوند منقضی شده است", "این صفحه یک‌بار مصرف است. در تلویزیون دوباره QR بسازید.", form = false))
-        return if (session.method == Method.POST) {
-            val address = session.parameters["address"]?.firstOrNull()?.trim().orEmpty()
-            val name = session.parameters["name"]?.firstOrNull()?.trim().orEmpty()
-            if (address.isEmpty()) return html(Response.Status.OK, page("نشانی خالی است", "نشانی سایت را وارد کنید.", form = true))
-            val err = onSubmit(name, address)
-            if (err == null) {
-                used = true
-                html(Response.Status.OK, page("اضافه شد", "منبع به تلویزیون اضافه شد. می‌توانید این صفحه را ببندید.", form = false))
-            } else html(Response.Status.OK, page("ناموفق", err, form = true))
-        } else {
-            html(Response.Status.OK, page("افزودن منبع به Rass_player", "نشانی سایت یا فید خود را وارد کنید.", form = true))
-        }
+    }
+
+    private class Texts(val title: String, val prompt: String, val label: String, val done: String)
+
+    private fun texts() = when (mode) {
+        LanMode.SOURCE -> Texts("افزودن منبع به Rass_player", "نشانی سایت یا فید خود را وارد کنید.", "نشانی سایت یا فید", "منبع به تلویزیون اضافه شد. می‌توانید این صفحه را ببندید.")
+        LanMode.SUBSCRIPTION -> Texts("افزودن اتصال خصوصی", "پیوند اشتراک (subscription) را جای‌گذاری کنید.", "پیوند اشتراک", "پیوند به تلویزیون اضافه شد. می‌توانید این صفحه را ببندید.")
+        LanMode.TEXT -> Texts("تایپ با گوشی", "متن جستجو را بنویسید.", "متن جستجو", "متن به تلویزیون فرستاده شد. می‌توانید این صفحه را ببندید.")
     }
 
     private fun html(status: Response.Status, body: String): Response =
@@ -54,6 +72,12 @@ class LanEntryServer(
             it.addHeader("Cache-Control", "no-store")
             it.addHeader("Referrer-Policy", "no-referrer")
         }
+
+    private fun field(): String = when (mode) {
+        LanMode.TEXT -> """<input name="value" dir="auto" autofocus>"""
+        LanMode.SUBSCRIPTION -> """<input name="value" type="url" dir="ltr" placeholder="https://" autofocus>"""
+        LanMode.SOURCE -> """<input name="value" type="url" dir="ltr" placeholder="https://mysite.nl" autofocus>"""
+    }
 
     private fun page(title: String, message: String, form: Boolean): String = """
         <!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8">
@@ -63,16 +87,39 @@ class LanEntryServer(
         button{padding:14px 28px;font-size:18px;border:0;border-radius:24px;background:#dc2626;color:#fff}</style></head><body>
         <h2>${esc(title)}</h2><p>${esc(message)}</p>
         ${if (form) """<form method="post" action="/?c=${esc(code)}">
-        <label>نشانی سایت یا فید</label><input name="address" type="url" dir="ltr" placeholder="https://mysite.nl" autofocus>
-        <label>نام (اختیاری)</label><input name="name">
-        <button type="submit">افزودن</button></form>""" else ""}
+        <label>${esc(texts().label)}</label>${field()}
+        ${if (mode != LanMode.TEXT) """<label>نام (اختیاری)</label><input name="name">""" else ""}
+        <button type="submit">ارسال</button></form>""" else ""}
         </body></html>
     """.trimIndent()
 
     companion object {
+        const val MAX_TEXT = 200
+        private const val MAX_NAME = 80
+        private val whitespace = Regex("\\s+")
         private val rnd = SecureRandom()
         fun newCode(): String = buildString { repeat(10) { append("abcdefghijkmnpqrstuvwxyz23456789"[rnd.nextInt(32)]) } }
         fun esc(s: String) = s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\"", "&quot;")
+
+        /** Checks one request. [params] = query + form fields; the value may arrive as `value` or legacy `address`. */
+        fun evaluate(mode: LanMode, expectedCode: String, used: Boolean, post: Boolean, params: Map<String, List<String>>): PhoneRequest {
+            if (used || params["c"]?.firstOrNull() != expectedCode) return PhoneRequest.Forbidden
+            if (!post) return PhoneRequest.ShowForm
+            val raw = (params["value"] ?: params["address"])?.firstOrNull().orEmpty()
+            val value = if (mode == LanMode.TEXT) raw.trim() else raw.trim().replace(whitespace, "")
+            val name = params["name"]?.firstOrNull()?.trim().orEmpty()
+            if (value.isEmpty()) return PhoneRequest.Invalid("مقدار خالی است.")
+            if (name.length > MAX_NAME) return PhoneRequest.Invalid("نام خیلی بلند است.")
+            return when (mode) {
+                LanMode.TEXT ->
+                    if (value.length > MAX_TEXT) PhoneRequest.Invalid("متن خیلی بلند است.") else PhoneRequest.Submit("", value)
+                LanMode.SUBSCRIPTION ->
+                    if (!value.startsWith("http://", true) && !value.startsWith("https://", true)) {
+                        PhoneRequest.Invalid("پیوند باید با http:// یا https:// شروع شود.")
+                    } else PhoneRequest.Submit(name, value)
+                LanMode.SOURCE -> PhoneRequest.Submit(name, value)
+            }
+        }
 
         /** First private-range IPv4 address of an up, non-loopback interface. */
         fun localIpv4(): String? = runCatching {
