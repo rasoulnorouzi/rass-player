@@ -256,16 +256,6 @@ private fun SourceFormDialog(editing: Source?, vm: SourcesViewModel, onDismiss: 
                     }
                 }
             }
-            item { TvTextField(f.name, { f = f.copy(name = it) }, stringResource(R.string.set_source_name_optional)) }
-            item { ChoiceRow(stringResource(R.string.set_source_interval), intervals, f.refreshMin, { f = f.copy(refreshMin = it) }) }
-            item { SwitchRow(stringResource(R.string.set_source_auth), showSecret, { showSecret = it }, subtitle = stringResource(R.string.set_source_auth_hint)) }
-            if (showSecret) {
-                item { TvTextField(f.token, { f = f.copy(token = it) }, stringResource(R.string.set_source_token), password = true, ltr = true, phoneHint = true) }
-                item { TvTextField(f.headerName, { f = f.copy(headerName = it) }, stringResource(R.string.set_source_header_name), ltr = true, placeholder = "X-Api-Key") }
-                item { TvTextField(f.headerValue, { f = f.copy(headerValue = it) }, stringResource(R.string.set_source_header_value), password = true, ltr = true, phoneHint = true) }
-                item { SwitchRow(stringResource(R.string.set_source_media_hosts), f.sendToMediaHosts, { f = f.copy(sendToMediaHosts = it) }) }
-                item { SwitchRow(stringResource(R.string.set_source_over_http), f.allowOverHttp, { f = f.copy(allowOverHttp = it) }, subtitle = stringResource(R.string.set_source_over_http_hint)) }
-            }
             item {
                 val d = discover
                 val text = when {
@@ -278,6 +268,16 @@ private fun SourceFormDialog(editing: Source?, vm: SourcesViewModel, onDismiss: 
                     else -> null
                 }
                 if (text != null) StatusText(text, error = err != null || d is DiscoverUi.Error)
+            }
+            item { TvTextField(f.name, { f = f.copy(name = it) }, stringResource(R.string.set_source_name_optional)) }
+            item { ChoiceRow(stringResource(R.string.set_source_interval), intervals, f.refreshMin, { f = f.copy(refreshMin = it) }) }
+            item { SwitchRow(stringResource(R.string.set_source_auth), showSecret, { showSecret = it }, subtitle = stringResource(R.string.set_source_auth_hint)) }
+            if (showSecret) {
+                item { TvTextField(f.token, { f = f.copy(token = it) }, stringResource(R.string.set_source_token), password = true, ltr = true, phoneHint = true) }
+                item { TvTextField(f.headerName, { f = f.copy(headerName = it) }, stringResource(R.string.set_source_header_name), ltr = true, placeholder = "X-Api-Key") }
+                item { TvTextField(f.headerValue, { f = f.copy(headerValue = it) }, stringResource(R.string.set_source_header_value), password = true, ltr = true, phoneHint = true) }
+                item { SwitchRow(stringResource(R.string.set_source_media_hosts), f.sendToMediaHosts, { f = f.copy(sendToMediaHosts = it) }) }
+                item { SwitchRow(stringResource(R.string.set_source_over_http), f.allowOverHttp, { f = f.copy(allowOverHttp = it) }, subtitle = stringResource(R.string.set_source_over_http_hint)) }
             }
         }
         Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
