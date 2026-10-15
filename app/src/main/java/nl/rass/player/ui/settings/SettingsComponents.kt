@@ -47,10 +47,12 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextDirection
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
+import nl.rass.player.R
 import nl.rass.player.ui.components.PillButton
 import nl.rass.player.ui.components.PillStyle
 import nl.rass.player.ui.components.ScreenScaffold
@@ -230,6 +232,8 @@ fun TvTextField(
     ltr: Boolean = false,
     keyboardType: KeyboardType = KeyboardType.Text,
     placeholder: String? = null,
+    /** Long text (links, keys): shows the hint that the Google TV phone app can type/paste here. */
+    phoneHint: Boolean = false,
 ) {
     var focused by remember { mutableStateOf(false) }
     val kb = LocalSoftwareKeyboardController.current
@@ -265,6 +269,7 @@ fun TvTextField(
                     false
                 },
         )
+        if (phoneHint) Text(stringResource(R.string.phone_typing_hint), style = MaterialTheme.typography.labelMedium, color = TextMuted)
     }
 }
 
@@ -287,7 +292,7 @@ fun TextEntryDialog(
     var text by remember { mutableStateOf(initial) }
     SettingsDialog(onDismiss, title) {
         if (hint != null) Text(hint, style = MaterialTheme.typography.labelMedium, color = TextMuted)
-        TvTextField(text, { text = it }, label, password = password, ltr = ltr)
+        TvTextField(text, { text = it }, label, password = password, ltr = ltr, phoneHint = password || ltr)
         Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
             PillButton(saveText, { onSave(text.trim()) }, style = PillStyle.Accent)
             if (onClear != null && clearText != null) PillButton(clearText, onClear)

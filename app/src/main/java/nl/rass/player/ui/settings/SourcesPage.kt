@@ -120,8 +120,8 @@ private fun Badge(text: String) {
 }
 
 @Composable
-private fun LanDialog(lan: LanUi, onClose: () -> Unit) {
-    SettingsDialog(onClose, stringResource(R.string.set_source_add_phone), width = 760.dp) {
+fun LanDialog(lan: LanUi, onClose: () -> Unit, title: String = stringResource(R.string.set_source_add_phone)) {
+    SettingsDialog(onClose, title, width = 760.dp) {
         when (lan) {
             is LanUi.Waiting -> Row(horizontalArrangement = Arrangement.spacedBy(24.dp), verticalAlignment = Alignment.CenterVertically) {
                 QrCode(lan.url, Modifier.size(300.dp))
@@ -155,16 +155,16 @@ private fun SourceFormDialog(editing: Source?, vm: SourcesViewModel, onDismiss: 
                 TvTextField(
                     f.address, { f = f.copy(address = it); if (editing == null) vm.resetForm() },
                     stringResource(if (editing == null) R.string.set_source_address else R.string.set_source_url),
-                    ltr = true, placeholder = "https://mysite.nl", keyboardType = androidx.compose.ui.text.input.KeyboardType.Uri,
+                    ltr = true, placeholder = "https://mysite.nl", phoneHint = true, keyboardType = androidx.compose.ui.text.input.KeyboardType.Uri,
                 )
             }
             item { TvTextField(f.name, { f = f.copy(name = it) }, stringResource(R.string.set_source_name_optional)) }
             item { ChoiceRow(stringResource(R.string.set_source_interval), intervals, f.refreshMin, { f = f.copy(refreshMin = it) }) }
             item { SwitchRow(stringResource(R.string.set_source_auth), showSecret, { showSecret = it }, subtitle = stringResource(R.string.set_source_auth_hint)) }
             if (showSecret) {
-                item { TvTextField(f.token, { f = f.copy(token = it) }, stringResource(R.string.set_source_token), password = true, ltr = true) }
+                item { TvTextField(f.token, { f = f.copy(token = it) }, stringResource(R.string.set_source_token), password = true, ltr = true, phoneHint = true) }
                 item { TvTextField(f.headerName, { f = f.copy(headerName = it) }, stringResource(R.string.set_source_header_name), ltr = true, placeholder = "X-Api-Key") }
-                item { TvTextField(f.headerValue, { f = f.copy(headerValue = it) }, stringResource(R.string.set_source_header_value), password = true, ltr = true) }
+                item { TvTextField(f.headerValue, { f = f.copy(headerValue = it) }, stringResource(R.string.set_source_header_value), password = true, ltr = true, phoneHint = true) }
                 item { SwitchRow(stringResource(R.string.set_source_media_hosts), f.sendToMediaHosts, { f = f.copy(sendToMediaHosts = it) }) }
                 item { SwitchRow(stringResource(R.string.set_source_over_http), f.allowOverHttp, { f = f.copy(allowOverHttp = it) }, subtitle = stringResource(R.string.set_source_over_http_hint)) }
             }

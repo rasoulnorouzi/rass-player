@@ -168,7 +168,7 @@ private fun HomeContent(s: HomeUiState, vm: HomeViewModel, onNavigate: (Route) -
         LazyColumn(
             state = listState,
             modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(top = 8.dp, bottom = 64.dp),
+            contentPadding = PaddingValues(top = 20.dp, bottom = 64.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
             if (s.failedSources.isNotEmpty()) {

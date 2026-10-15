@@ -64,8 +64,10 @@ import nl.rass.player.ui.components.SectionHeader
 import nl.rass.player.ui.components.tvFocusable
 import nl.rass.player.ui.format.fa
 import nl.rass.player.ui.navigation.Route
-import nl.rass.player.ui.search.keyboard.KbKey
-import nl.rass.player.ui.search.keyboard.OnScreenKeyboard
+import nl.rass.player.ui.search.keyboard.RassKeyboard
+import nl.rass.player.ui.settings.LanDialog
+import nl.rass.player.ui.settings.LanUi
+import nl.rass.player.ui.search.keyboard.RassTextField
 import nl.rass.player.ui.theme.Accent
 import nl.rass.player.ui.theme.SurfaceRaised
 import nl.rass.player.ui.theme.TextMuted
@@ -94,6 +96,9 @@ fun SearchScreen(onNavigate: (Route) -> Unit, onBack: () -> Unit) {
         Unit
     }
 
+    val lan by vm.lan.collectAsStateWithLifecycle()
+    if (lan != LanUi.Off) LanDialog(lan, onClose = vm::stopLan, title = stringResource(R.string.search_type_with_phone))
+
     val firstKey = remember { FocusRequester() }
     LaunchedEffect(Unit) { runCatching { firstKey.requestFocus() } }
     BackHandler(enabled = s.query.isNotEmpty()) { vm.setQuery("") }
@@ -102,16 +107,28 @@ fun SearchScreen(onNavigate: (Route) -> Unit, onBack: () -> Unit) {
         Modifier.fillMaxSize().padding(horizontal = 48.dp, vertical = 24.dp),
         horizontalArrangement = Arrangement.spacedBy(32.dp),
     ) {
-        // Start side: keyboard.
-        OnScreenKeyboard(
-            language = s.language,
+        // Start side: predictor + keyboard.
+        RassKeyboard(
+            text = s.query,
+            onTextChange = vm::setQuery,
+            vocab = s.vocab,
+            recents = s.recents,
             micAvailable = micAvailable,
-            onKey = { if (it == KbKey.Mic) startVoice() else vm.onKey(it) },
+            onMic = startVoice,
             modifier = Modifier.width(560.dp),
             firstKeyFocus = firstKey,
         )
         Column(Modifier.weight(1f).fillMaxSize(), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-            QueryField(s.query, vm::setQuery, onDone = vm::rememberCurrent)
+            RassTextField(
+                s.query, vm::setQuery, stringResource(R.string.search_hint),
+                imeAction = ImeAction.Search, onImeAction = vm::rememberCurrent,
+            )
+            Text(stringResource(R.string.phone_typing_hint), style = MaterialTheme.typography.labelMedium, color = TextMuted)
+            Text(
+                stringResource(R.string.search_type_with_phone),
+                style = MaterialTheme.typography.labelMedium, color = Accent,
+                modifier = Modifier.tvFocusable(shape = RoundedCornerShape(50), onClick = vm::startLan).padding(horizontal = 14.dp, vertical = 4.dp),
+            )
             SuggestionStrip(s, onPick = vm::submit, onClearRecents = vm::clearRecents)
             Filters(s, vm::setSource, vm::setType)
             ResultsArea(s, onOpen = { key ->
@@ -120,49 +137,6 @@ fun SearchScreen(onNavigate: (Route) -> Unit, onBack: () -> Unit) {
             })
         }
     }
-}
-
-@Composable
-private fun QueryField(query: String, onChange: (String) -> Unit, onDone: () -> Unit) {
-    var focused by remember { mutableStateOf(false) }
-    val focusManager = LocalFocusManager.current
-    val shape = RoundedCornerShape(12.dp)
-    BasicTextField(
-        value = query,
-        onValueChange = onChange,
-        singleLine = true,
-        textStyle = MaterialTheme.typography.titleMedium.copy(color = TextPrimary),
-        cursorBrush = SolidColor(Accent),
-        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-        keyboardActions = KeyboardActions(onSearch = { onDone() }),
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(shape)
-            .background(SurfaceRaised)
-            .border(if (focused) 3.dp else 1.dp, if (focused) TextPrimary else TextMuted.copy(alpha = 0.4f), shape)
-            .onFocusChanged { focused = it.isFocused }
-            // A focused text field eats the D-pad (cursor moves) and traps focus. Editing happens on the
-            // on-screen keyboard, so the arrows always move focus out of the field.
-            .onPreviewKeyEvent { e ->
-                val dir = when (e.key) {
-                    Key.DirectionUp -> FocusDirection.Up
-                    Key.DirectionDown -> FocusDirection.Down
-                    Key.DirectionLeft -> FocusDirection.Left
-                    Key.DirectionRight -> FocusDirection.Right
-                    else -> null
-                } ?: return@onPreviewKeyEvent false
-                if (e.type == KeyEventType.KeyDown) focusManager.moveFocus(dir)
-                true
-            },
-        decorationBox = { inner ->
-            Box(Modifier.padding(horizontal = 20.dp, vertical = 14.dp), contentAlignment = Alignment.CenterStart) {
-                if (query.isEmpty()) {
-                    Text(stringResource(R.string.search_hint), style = MaterialTheme.typography.titleMedium, color = TextMuted)
-                }
-                inner()
-            }
-        },
-    )
 }
 
 /** Suggestions while typing; recent searches (with a clear action) when the query is empty. */

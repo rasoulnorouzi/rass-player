@@ -57,7 +57,7 @@ fun HeroBillboard(
     modifier: Modifier = Modifier,
     playFocusRequester: androidx.compose.ui.focus.FocusRequester? = null,
 ) {
-    Box(modifier.fillMaxWidth().height(380.dp)) {
+    Box(modifier.fillMaxWidth().height(420.dp)) {
         // Backdrop crossfades when the featured item changes.
         Crossfade(info, animationSpec = tween(500), label = "heroBackdrop", modifier = Modifier.fillMaxSize()) { i ->
             RassImage(
@@ -68,20 +68,21 @@ fun HeroBillboard(
         }
         Crossfade(info, animationSpec = tween(300), label = "heroText", modifier = Modifier.fillMaxSize()) { i ->
             Column(
-                Modifier.fillMaxHeight().width(620.dp).padding(start = 8.dp, bottom = 24.dp),
+                Modifier.fillMaxHeight().width(620.dp).padding(start = 8.dp, top = 24.dp, bottom = 24.dp),
                 verticalArrangement = Arrangement.Bottom,
             ) {
                 if (i.logoUrl != null) {
                     RassImage(i.logoUrl, 480.dp, 140.dp, Modifier.size(480.dp, 140.dp), placeholderSeed = i.title,
                         contentScale = androidx.compose.ui.layout.ContentScale.Fit)
                 } else {
-                    Text(i.title, style = MaterialTheme.typography.displayMedium.copy(textDirection = TextDirection.Content), color = TextPrimary, maxLines = 2)
+                    Text(i.title, style = MaterialTheme.typography.displayMedium.copy(textDirection = TextDirection.Content), color = TextPrimary, maxLines = 2,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
                 }
                 HeroMeta(i)
                 if (i.description != null) {
                     Text(
                         i.description, style = MaterialTheme.typography.bodyLarge, color = TextPrimary.copy(alpha = 0.9f),
-                        maxLines = 3, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                        maxLines = 2, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
                         modifier = Modifier.padding(top = 4.dp),
                     )
                 }

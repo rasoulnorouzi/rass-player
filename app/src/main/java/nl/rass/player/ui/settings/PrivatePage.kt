@@ -19,7 +19,11 @@ import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import nl.rass.player.data.source.LanEntryServer
+import nl.rass.player.data.source.LanMode
 import nl.rass.player.R
 import nl.rass.player.net.CheckOutcome
 import nl.rass.player.net.ConnectStep
@@ -54,6 +58,39 @@ class PrivateConnectionViewModel @Inject constructor(
     fun select(id: String) { viewModelScope.launch { proxy.selectConfig(id) } }
     fun setConcurrency(n: Int) { viewModelScope.launch { proxy.setTestConcurrency(n) } }
     fun remove(id: String) { viewModelScope.launch { proxy.removeSubscription(id) } }
+
+    // ---- R1.7: subscription link typed on the phone. The link goes straight into the encrypted store; never logged. ----
+    private val _lan = MutableStateFlow<LanUi>(LanUi.Off)
+    val lan: StateFlow<LanUi> = _lan.asStateFlow()
+    private var server: LanEntryServer? = null
+
+    fun startLan() {
+        stopLan()
+        val s = LanEntryServer(LanMode.SUBSCRIPTION) { name, link -> addFromPhone(name, link) }
+        val url = runCatching { s.startAndGetUrl() }.getOrNull()
+        if (url == null) { _lan.value = LanUi.NoNetwork; return }
+        server = s
+        _lan.value = LanUi.Waiting(url)
+    }
+
+    private fun addFromPhone(name: String, link: String): String? = runBlocking(Dispatchers.IO) {
+        try {
+            val res = proxy.addSubscription(link, name)
+            if (res.configs.isEmpty()) "در این پیوند پیکربندی قابل استفاده‌ای پیدا نشد."
+            else { _lan.value = LanUi.Added(name.ifBlank { "اتصال خصوصی" }); null }
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            "افزودن ناموفق بود."
+        }
+    }
+
+    fun stopLan() {
+        server?.stop(); server = null
+        _lan.value = LanUi.Off
+    }
+
+    override fun onCleared() { server?.stop(); server = null }
 
     fun add(url: String, name: String) = run { r ->
         val res = proxy.addSubscription(url, name)
@@ -114,6 +151,7 @@ fun PrivateConnectionPage(onBack: () -> Unit, vm: PrivateConnectionViewModel = h
     val busy by vm.busy.collectAsState()
     val message by vm.message.collectAsState()
     val check by vm.check.collectAsState()
+    val lan by vm.lan.collectAsState()
     val s = data.settings
     var addDialog by remember { mutableStateOf(false) }
     var removing by remember { mutableStateOf<String?>(null) }
@@ -181,6 +219,7 @@ fun PrivateConnectionPage(onBack: () -> Unit, vm: PrivateConnectionViewModel = h
         }
 
         item { SettingRow(stringResource(R.string.set_pc_add_sub), { addDialog = true }, subtitle = stringResource(R.string.set_pc_add_sub_hint)) }
+        item { SettingRow(stringResource(R.string.set_pc_add_phone), { vm.startLan() }, subtitle = stringResource(R.string.set_pc_add_phone_hint)) }
         items(data.subscriptions, key = { it.id }) { sub ->
             val n = data.configs.count { it.subscriptionId == sub.id }
             SettingRow(
@@ -210,6 +249,7 @@ fun PrivateConnectionPage(onBack: () -> Unit, vm: PrivateConnectionViewModel = h
         }
     }
 
+    if (lan != LanUi.Off) LanDialog(lan, onClose = { vm.stopLan() }, title = stringResource(R.string.set_pc_add_phone))
     if (addDialog) AddSubscriptionDialog(
         onAdd = { u, n -> vm.add(u, n); addDialog = false }, onDismiss = { addDialog = false },
     )
@@ -227,7 +267,7 @@ private fun AddSubscriptionDialog(onAdd: (String, String) -> Unit, onDismiss: ()
     var url by remember { mutableStateOf("") }
     var name by remember { mutableStateOf("") }
     SettingsDialog(onDismiss, stringResource(R.string.set_pc_add_sub)) {
-        TvTextField(url, { url = it }, stringResource(R.string.set_pc_sub_url), ltr = true)
+        TvTextField(url, { url = it }, stringResource(R.string.set_pc_sub_url), ltr = true, phoneHint = true)
         TvTextField(name, { name = it }, stringResource(R.string.set_pc_sub_name))
         Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
             PillButton(stringResource(R.string.set_save), { if (url.isNotBlank()) onAdd(url.trim(), name.trim()) }, style = PillStyle.Accent)
